@@ -49,9 +49,9 @@ API-RuangTeknoID/
 ├── models/         # Model database
 ├── routes/         # Routes API
 ├── utils/          # Utilitas dan alat bantu
-├── .env            # File konfigurasi lingkungan
+├── .env            # File konfigurasi env production
 ├── .env.example    # Contoh file konfigurasi env
-├── .env.production # File konfigurasi env production
+├── .env.local      # File konfigurasi env local
 ├── .gitignore      # File untuk mengabaikan file dan
 direktori tertentu di Git
 ├── index.js        # File utama untuk menjalankan server
