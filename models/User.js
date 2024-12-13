@@ -1,3 +1,4 @@
+// models/User.js
 class User {
   constructor(id, name, email, password, createdAt) {
     this.id = id;

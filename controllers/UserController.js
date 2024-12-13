@@ -1,6 +1,8 @@
+// controllers/UserController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../config/db");
+const sendEmail = require("../utils/sendEmail");
 
 class UserController {
   static register(req, res) {
@@ -236,6 +238,96 @@ class UserController {
         message: "User " + id + " berhasil dihapus",
       });
     });
+  }
+
+  static async forgotPassword(req, res) {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    db.query(
+      "SELECT id FROM users WHERE email = ?",
+      [email],
+      async (err, results) => {
+        if (err) {
+          return res
+            .status(500)
+            .json({ error: "Internal Server Error", message: err.message });
+        }
+
+        if (results.length === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const user = results[0];
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "15m",
+        });
+
+        const resetLink = `${req.protocol}://${req.get(
+          "host"
+        )}/user/reset-password/${token}`;
+
+        try {
+          await sendEmail({
+            to: email,
+            subject: "Password Reset Request",
+            message: `<p>Click <a href="${resetLink}">here</a> to reset your password. The link will expire in 15 minutes.</p>`,
+          });
+
+          res.status(200).json({
+            status: "success",
+            message: "Password reset link has been sent to your email",
+          });
+        } catch (error) {
+          res.status(500).json({
+            error: "Failed to send email",
+            message: error.message,
+          });
+        }
+      }
+    );
+  }
+
+  static resetPassword(req, res) {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "Token and new password are required" });
+    }
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+      db.query(
+        "UPDATE users SET password = ? WHERE id = ?",
+        [hashedPassword, decoded.userId],
+        (err, result) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ error: "Internal Server Error", message: err.message });
+          }
+
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "User not found" });
+          }
+
+          res.status(200).json({
+            status: "success",
+            message: "Password has been updated successfully",
+          });
+        }
+      );
+    } catch (err) {
+      res.status(400).json({ error: "Invalid or expired token" });
+    }
   }
 }
 
