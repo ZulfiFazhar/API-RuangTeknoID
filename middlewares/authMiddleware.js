@@ -14,7 +14,7 @@ const authMiddleware = (req, res, next) => {
 
     // Periksa apakah token yang ada di database masih aktif
     db.query(
-      "SELECT active_token FROM users WHERE id = ?",
+      "SELECT active_token, refresh_token FROM users WHERE id = ?",
       [decoded.userId],
       (err, results) => {
         if (err) {
@@ -27,7 +27,42 @@ const authMiddleware = (req, res, next) => {
       }
     );
   } catch (err) {
-    res.status(400).json({ error: "Invalid token" });
+    // Jika token akses tidak valid, coba verifikasi refresh token
+    const refreshToken = req.headers["x-refresh-token"];
+    if (!refreshToken) {
+      return res
+        .status(400)
+        .json({ error: "Invalid token and no refresh token provided" });
+    }
+
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).json({ error: "Invalid refresh token" });
+      }
+
+      // Buat token akses baru
+      const newAccessToken = jwt.sign(
+        { userId: user.userId, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      // Perbarui token aktif di database
+      db.query(
+        "UPDATE users SET active_token = ? WHERE id = ?",
+        [newAccessToken, user.userId],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
+
+          // Kirim token akses baru di header respons
+          res.setHeader("x-access-token", newAccessToken);
+          req.user = user;
+          next();
+        }
+      );
+    });
   }
 };
 
