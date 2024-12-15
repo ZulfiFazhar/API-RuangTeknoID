@@ -40,11 +40,9 @@ class UserController {
 
   static login(req, res) {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
-
     db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
       if (err) {
         return res.status(500).json({
@@ -54,52 +52,30 @@ class UserController {
         });
       }
       if (results.length === 0) {
-        return res.status(404).json({
-          status: "error",
-          message: "User not found",
-        });
+        return res
+          .status(404)
+          .json({ status: "error", message: "User not found" });
       }
-
       const user = results[0];
       const isPasswordValid = bcrypt.compareSync(password, user.password);
-
       if (!isPasswordValid) {
-        return res.status(401).json({
-          status: "error",
-          message: "Invalid credentials",
-        });
+        return res
+          .status(401)
+          .json({ status: "error", message: "Invalid credentials" });
       }
-
-      // Cek jika ada active_token di database, artinya sudah login di perangkat lain
-      if (user.active_token) {
-        // Hapus token lama
-        db.query(
-          "UPDATE users SET active_token = NULL WHERE active_token = ?",
-          [user.active_token],
-          (err) => {
-            if (err) {
-              return res.status(500).json({
-                status: "error",
-                message: "Failed to log out previous device",
-                error: err.message,
-              });
-            }
-          }
-        );
-      }
-
-      const token = jwt.sign(
+      const accessToken = jwt.sign(
         { userId: user.id, email: user.email },
         process.env.JWT_SECRET,
-        {
-          expiresIn: "1h",
-        }
+        { expiresIn: "1h" }
       );
-
-      // Simpan token aktif di database
+      const refreshToken = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "7d" }
+      );
       db.query(
-        "UPDATE users SET active_token = ? WHERE id = ?",
-        [token, user.id],
+        "UPDATE users SET active_token = ?, refresh_token = ? WHERE id = ?",
+        [accessToken, refreshToken, user.id],
         (err) => {
           if (err) {
             return res.status(500).json({
@@ -112,11 +88,34 @@ class UserController {
             status: "success",
             message: "Login successful",
             data: {
-              token: token,
+              accessToken: accessToken,
+              refreshToken: refreshToken,
             },
           });
         }
       );
+    });
+  }
+
+  static refreshToken(req, res) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: "Refresh token is required" });
+    }
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).json({ error: "Invalid refresh token" });
+      }
+      const newAccessToken = jwt.sign(
+        { userId: user.userId, email: user.email },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+      res.status(200).json({
+        status: "success",
+        message: "Token refreshed",
+        data: { accessToken: newAccessToken },
+      });
     });
   }
 
@@ -157,11 +156,11 @@ class UserController {
   }
 
   static getUserById(req, res) {
-    const { id } = req.params;
+    const { userId } = req.user;
 
     db.query(
       "SELECT id, name, email, created_at FROM users WHERE id = ?",
-      [id],
+      [userId],
       (err, results) => {
         if (err) {
           return res.status(500).json({
@@ -266,15 +265,13 @@ class UserController {
           expiresIn: "15m",
         });
 
-        const resetLink = `${req.protocol}://${req.get(
-          "host"
-        )}/user/reset-password/${token}`;
+        const resetLink = `${process.env.FE_HOST}/reset-password/${token}`;
 
         try {
           await sendEmail({
             to: email,
             subject: "Password Reset Request",
-            message: `<p>Click <a href="${resetLink}">here</a> to reset your password. The link will expire in 15 minutes.</p>`,
+            message: `<p>Access this link down below to reset your password. The link will expire in 15 minutes.</p> <br> <a href="${resetLink}">${resetLink}</a>`,
           });
 
           res.status(200).json({
@@ -303,26 +300,56 @@ class UserController {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
+      // Ambil password lama dari database
       db.query(
-        "UPDATE users SET password = ? WHERE id = ?",
-        [hashedPassword, decoded.userId],
-        (err, result) => {
+        "SELECT password FROM users WHERE id = ?",
+        [decoded.userId],
+        (err, results) => {
           if (err) {
             return res
               .status(500)
               .json({ error: "Internal Server Error", message: err.message });
           }
 
-          if (result.affectedRows === 0) {
+          if (results.length === 0) {
             return res.status(404).json({ error: "User not found" });
           }
 
-          res.status(200).json({
-            status: "success",
-            message: "Password has been updated successfully",
-          });
+          const oldPassword = results[0].password;
+
+          // Periksa apakah password baru sama dengan password lama
+          if (bcrypt.compareSync(newPassword, oldPassword)) {
+            return res.status(400).json({
+              error:
+                "New password must be different from the previous password",
+            });
+          }
+
+          // Jika validasi lolos, hash password baru dan simpan
+          const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+          db.query(
+            "UPDATE users SET password = ? WHERE id = ?",
+            [hashedPassword, decoded.userId],
+            (updateErr, result) => {
+              if (updateErr) {
+                return res.status(500).json({
+                  error: "Internal Server Error",
+                  message: updateErr.message,
+                });
+              }
+
+              if (result.affectedRows === 0) {
+                return res.status(404).json({ error: "User not found" });
+              }
+
+              res.status(200).json({
+                status: "success",
+                message: "Password has been updated successfully",
+              });
+            }
+          );
         }
       );
     } catch (err) {

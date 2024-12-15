@@ -29,6 +29,7 @@ const createUsersTable = () => {
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       active_token VARCHAR(255) DEFAULT NULL,
+      refresh_token VARCHAR(255) DEFAULT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
