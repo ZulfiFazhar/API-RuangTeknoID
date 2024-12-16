@@ -5,37 +5,112 @@ const db = require("../config/db");
 const sendEmail = require("../utils/sendEmail");
 
 class UserController {
-  static register(req, res) {
+  static async register(req, res) {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const hashedPassword = bcrypt.hashSync(password, 10);
+    try {
+      const [existingUser] = await db
+        .promise()
+        .query("SELECT id FROM users WHERE email = ?", [email]);
 
-    db.query(
-      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashedPassword],
-      (err, result) => {
-        if (err) {
-          return res.status(500).json({
-            status: "error",
-            message: "Internal Server Error",
-            error: err.message,
-          });
-        }
-        res.status(201).json({
-          status: "success",
-          message: "Berhasil menambahkan user",
-          data: {
-            userId: result.insertId,
-            userName: name,
-            userEmail: email,
-          },
-        });
+      if (existingUser.length > 0) {
+        return res
+          .status(400)
+          .json({ error: "Email is already registered. Please log in." });
       }
-    );
+
+      const hashedPassword = bcrypt.hashSync(password, 10);
+
+      const otp = Math.floor(100000 + Math.random() * 900000);
+
+      const [result] = await db
+        .promise()
+        .query(
+          "INSERT INTO users (name, email, password, otp_code, is_verified) VALUES (?, ?, ?, ?, ?)",
+          [name, email, hashedPassword, otp, false]
+        );
+
+      await sendEmail({
+        to: email,
+        subject: "Your Registration OTP Code",
+        message: `<p>Hello ${name},</p>
+                  <p>Use the OTP code below to verify your account:</p>
+                  <h2>${otp}</h2>
+                  <p>This code will expire in 10 minutes.</p>`,
+      });
+
+      res.status(201).json({
+        status: "success",
+        message: "User registered successfully. Check your email for the OTP.",
+        data: {
+          userId: result.insertId,
+          userName: name,
+          userEmail: email,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async verifyOtp(req, res) {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ error: "Email and OTP are required" });
+    }
+
+    try {
+      const [user] = await db
+        .promise()
+        .query("SELECT id, otp_code, is_verified FROM users WHERE email = ?", [
+          email,
+        ]);
+
+      if (user.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const { id, otp_code, is_verified } = user[0];
+
+      if (is_verified) {
+        return res
+          .status(400)
+          .json({ error: "Account is already verified. Please log in." });
+      }
+
+      if (otp_code !== otp) {
+        return res
+          .status(400)
+          .json({ error: "Invalid OTP. Please try again." });
+      }
+
+      await db
+        .promise()
+        .query(
+          "UPDATE users SET is_verified = ?, otp_code = NULL WHERE id = ?",
+          [true, id]
+        );
+
+      res.status(200).json({
+        status: "success",
+        message: "Account verified successfully. You can now log in.",
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
   }
 
   static login(req, res) {
