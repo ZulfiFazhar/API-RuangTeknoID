@@ -9,23 +9,10 @@ const authMiddleware = (req, res, next) => {
   }
 
   try {
+    // Jika aktif token sudah kadaluwarsa, jwt.verify akan otomatis melempar error (tidak perlu cek manual di db)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-
-    // Periksa apakah token yang ada di database masih aktif
-    db.query(
-      "SELECT active_token, refresh_token FROM users WHERE id = ?",
-      [decoded.userId],
-      (err, results) => {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
-        if (results.length === 0 || results[0].active_token !== token) {
-          return res.status(401).json({ error: "Invalid or expired token" });
-        }
-        next();
-      }
-    );
+    next()
   } catch (err) {
     // Jika token akses tidak valid, coba verifikasi refresh token
     const refreshToken = req.headers["x-refresh-token"];
@@ -55,13 +42,11 @@ const authMiddleware = (req, res, next) => {
           if (err) {
             return res.status(500).json({ error: err.message });
           }
-
-          // Kirim token akses baru di header respons
-          res.setHeader("x-access-token", newAccessToken);
-          req.user = user;
-          next();
         }
       );
+
+      req.user = user;
+      next();
     });
   }
 };
