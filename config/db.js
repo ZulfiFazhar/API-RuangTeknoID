@@ -21,8 +21,8 @@ db.connect((err) => {
   }
 });
 
-const createUsersTable = () => {
-  const createTableQuery = `
+const createDatabase = () => {
+  const createDatabaseQuery = `
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
@@ -36,7 +36,7 @@ const createUsersTable = () => {
     )
   `;
 
-  db.query(createTableQuery, (err, result) => {
+  db.query(createDatabaseQuery, (err, result) => {
     if (err) {
       console.error("Error creating table:", err.message);
     } else {
@@ -45,6 +45,6 @@ const createUsersTable = () => {
   });
 };
 
-createUsersTable();
+createDatabase();
 
 module.exports = db;
