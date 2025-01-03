@@ -12,7 +12,8 @@ const authMiddleware = (req, res, next) => {
     // Jika aktif token sudah kadaluwarsa, jwt.verify akan otomatis melempar error (tidak perlu cek manual di db)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    next()
+    console.log("from access token");
+    next();
   } catch (err) {
     // Jika token akses tidak valid, coba verifikasi refresh token
     const refreshToken = req.headers["x-refresh-token"];
@@ -46,6 +47,8 @@ const authMiddleware = (req, res, next) => {
       );
 
       req.user = user;
+      req.newAccessToken = newAccessToken;
+      console.log("from refresh token");
       next();
     });
   }

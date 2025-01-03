@@ -175,10 +175,15 @@ class UserController {
   static validateLogin(req, res) {
     // Mengambil data user dari authMiddleware (user dipastikan sudah terotentikasi)
     const user = req.user;
+
+    // Mengambil token baru dari authMiddleware (jika token lama sudah kadaluwarsa)
+    const newAccessToken = req.newAccessToken;
+      
     res.status(200).json({
       status: "success",
       message: "User is logged in",
       data: user,
+      newAccessToken: newAccessToken,
     });
   }
 
