@@ -141,7 +141,7 @@ class UserController {
       const accessToken = jwt.sign(
         { userId: user.id, name: user.name, email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: "10s" }
+        { expiresIn: "1h" }
       );
       const refreshToken = jwt.sign(
         { userId: user.id, name: user.name, email: user.email },

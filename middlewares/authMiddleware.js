@@ -31,7 +31,7 @@ const authMiddleware = (req, res, next) => {
       const newAccessToken = jwt.sign(
         { userId: user.userId, name: user.name,  email: user.email },
         process.env.JWT_SECRET,
-        { expiresIn: "10s" }
+        { expiresIn: "1h" }
       );
 
       // Perbarui token aktif di database
