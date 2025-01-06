@@ -139,12 +139,12 @@ class UserController {
           .json({ status: "error", message: "Invalid credentials" });
       }
       const accessToken = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, name: user.name, email: user.email },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
       const refreshToken = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, name: user.name, email: user.email },
         process.env.JWT_REFRESH_SECRET,
         { expiresIn: "7d" }
       );
@@ -172,6 +172,21 @@ class UserController {
     });
   }
 
+  static validateLogin(req, res) {
+    // Mengambil data user dari authMiddleware (user dipastikan sudah terotentikasi)
+    const user = req.user;
+
+    // Mengambil token baru dari authMiddleware (jika token lama sudah kadaluwarsa)
+    const newAccessToken = req.newAccessToken;
+      
+    res.status(200).json({
+      status: "success",
+      message: "User is logged in",
+      data: user,
+      newAccessToken: newAccessToken,
+    });
+  }
+
   static refreshToken(req, res) {
     const { refreshToken } = req.body;
     if (!refreshToken) {
@@ -195,7 +210,7 @@ class UserController {
   }
 
   static logout(req, res) {
-    const { userId } = req.user; // Mendapatkan userId dari middleware JWT
+    const userId = req.headers["userid"]; 
 
     db.query(
       "UPDATE users SET active_token = NULL WHERE id = ?",
