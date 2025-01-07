@@ -39,7 +39,7 @@ const createDatabase = () => {
     ,
       ["Posts",
         `CREATE TABLE IF NOT EXISTS Posts (
-          PostId INT PRIMARY KEY AUTO_INCREMENT,
+          postId INT PRIMARY KEY AUTO_INCREMENT,
           userId INT NOT NULL,
           title VARCHAR(50) NOT NULL,
           content TEXT,
