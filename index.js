@@ -3,6 +3,8 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const userRoutes = require("./routes/userRoutes");
 const geminiRoutes = require("./routes/geminiRoutes");
+const postRoutes = require("./routes/postRoutes");
+const hashtagRoutes = require("./routes/hashtagRoutes");
 require("dotenv").config();
 
 const corsOptions = {
@@ -20,6 +22,8 @@ app.use(bodyParser.json());
 // Routes
 app.use("/user", userRoutes);
 app.use("/gemini", geminiRoutes);
+app.use("/post", postRoutes);
+app.use("/hashtag", hashtagRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Ruang Tekno ID API");
