@@ -36,13 +36,13 @@ class PostController {
 
     try {
       const postId = await Post.createPost({ userId, title, content });
-      
-      if(hashtags.length > 0) {
+
+      if (hashtags.length > 0) {
         hashtags.forEach(async (hashtag) => {
           await Post.addHashtag(postId, hashtag);
-        })
+        });
       }
-      
+
       res.status(201).json({
         status: "success",
         message: "Post created successfully",
@@ -195,7 +195,7 @@ class PostController {
     try {
       const updated = await Post.votes(postId, intVote);
       if (!updated) {
-        console.log("tes")
+        console.log("tes");
         return res.status(404).json({
           status: "error",
           message: "Post not found",
@@ -245,7 +245,6 @@ class PostController {
     const hashtagId = parseInt(req.body.hashtagId);
     const { userId } = req.user;
 
-
     // Check if user is the owner of the post
     const post = await Post.findPostById(postId);
     if (post.userId !== userId) {
@@ -267,6 +266,39 @@ class PostController {
       res.status(200).json({
         status: "success",
         message: "Hashtag added to post",
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async searchPostsByKeyword(req, res) {
+    const { keyword } = req.query;
+
+    if (!keyword) {
+      return res.status(400).json({
+        status: "error",
+        message: "Keyword is required for searching posts",
+      });
+    }
+
+    try {
+      const posts = await Post.searchByKeyword(keyword);
+      if (posts.length === 0) {
+        return res.status(404).json({
+          status: "error",
+          message: "No article found matching the keyword",
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "Articles found",
+        data: posts,
       });
     } catch (err) {
       res.status(500).json({
