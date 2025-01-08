@@ -12,6 +12,7 @@ router.post("/refresh-token", UserController.refreshToken);
 router.post("/logout", UserController.logout);
 router.get("/users", authMiddleware, UserController.getAllUsers);
 router.get("/users/profile", authMiddleware, UserController.getUserById);
+router.get("/users/:userId", UserController.getOtherUserById);
 router.put("/users/:id", authMiddleware, UserController.updateUser);
 router.delete("/users/:id", authMiddleware, UserController.deleteUser);
 router.post("/forgot-password", UserController.forgotPassword);

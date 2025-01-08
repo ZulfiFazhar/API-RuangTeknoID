@@ -22,27 +22,64 @@ db.connect((err) => {
 });
 
 const createDatabase = () => {
-  const createDatabaseQuery = `
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL,
-      active_token VARCHAR(255) DEFAULT NULL,
-      refresh_token VARCHAR(255) DEFAULT NULL,
-      otp_code VARCHAR(6) DEFAULT NULL,
-      is_verified BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `;
+  const createDatabaseQueries = [
+      ["Users",
+        `CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          active_token VARCHAR(255) DEFAULT NULL,
+          refresh_token VARCHAR(255) DEFAULT NULL,
+          otp_code VARCHAR(6) DEFAULT NULL,
+          is_verified BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`
+      ]
+    ,
+      ["Posts",
+        `CREATE TABLE IF NOT EXISTS Posts (
+          postId INT PRIMARY KEY AUTO_INCREMENT,
+          userId INT NOT NULL,
+          title VARCHAR(50) NOT NULL,
+          content TEXT,
+          views INT DEFAULT 0,
+          votes INT DEFAULT 0,
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
+        )`
+      ]
+    ,
+      ["Hashtags",
+        `CREATE TABLE IF NOT EXISTS Hashtags (
+          hashtagId INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(35) NOT NULL,
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );`
+      ]
+    ,
+      ["PostHashtags",
+        `CREATE TABLE IF NOT EXISTS PostHashtags (
+          postId INT NOT NULL,
+          hashtagId INT NOT NULL,
+          PRIMARY KEY (postId, hashtagId),
+          FOREIGN KEY (postId) REFERENCES Posts(PostId) ON DELETE CASCADE,
+          FOREIGN KEY (hashtagId) REFERENCES Hashtags(hashtagId) ON DELETE CASCADE
+        );`
+      ]
+  ];
 
-  db.query(createDatabaseQuery, (err, result) => {
-    if (err) {
-      console.error("Error creating table:", err.message);
-    } else {
-      console.log("Users table is ready.");
-    }
-  });
+  createDatabaseQueries.map((query) => {
+    db.query(query[1], (err, result) => {  
+      if (err) {
+        console.error("Error creating table:", err.message);
+      } else {
+        console.log(`Table ${query[0]} is ready.`);
+      }
+    });
+  })
 };
 
 createDatabase();
