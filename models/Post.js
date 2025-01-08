@@ -19,6 +19,19 @@ class Post {
     return results.length > 0 ? results[0] : null;
   }
 
+  static async findPostDetailById(postId) {
+    const [results] = await db
+      .promise()
+      .query(`SELECT posts.*, users.name, users.email, GROUP_CONCAT(hashtags.name) AS hashtags
+              FROM posts
+              JOIN users ON users.id = posts.userId
+              JOIN posthashtags USING(postId)
+              JOIN hashtags USING(hashtagId)
+              WHERE posts.postId = ?
+              GROUP BY posts.postId`, [postId]);
+    return results.length > 0 ? results[0] : null;
+  }
+
   static async findAllPosts() {
     const [results] = await db.promise().query("SELECT * FROM Posts");
     return results;

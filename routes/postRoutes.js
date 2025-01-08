@@ -8,6 +8,7 @@ router.post("/create", authMiddleware, PostController.createPost);
 router.post("/create-with-hashtags", authMiddleware, PostController.createPostWithHashtags);
 router.get("/get", PostController.getAllPosts);
 router.get("/get/:postId", PostController.getPostById);
+router.get("/get-detail/:postId", PostController.getPostDetailById);
 router.put("/update/:postId", authMiddleware, PostController.updatePostById);
 router.delete("/delete/:postId", authMiddleware, PostController.deletePostById);
 router.post("/votes/:postId", authMiddleware, PostController.votes);

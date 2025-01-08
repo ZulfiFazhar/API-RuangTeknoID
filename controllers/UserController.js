@@ -253,6 +253,36 @@ class UserController {
     }
   }
 
+  static async getOtherUserById(req, res) {
+    const { userId } = req.params;
+
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
+      }
+      res.status(200).json({
+        status: "success",
+        message: "User retrieved successfully",
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          createdAt: user.created_at,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
   // Metode Update Pengguna
   static async updateUser(req, res) {
     const { id } = req.params;
