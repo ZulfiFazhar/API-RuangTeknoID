@@ -1,7 +1,16 @@
 const db = require("../config/db");
 
 class Post {
-  constructor(postId, userId, title, content, views, votes, createdAt, updatedAt) {
+  constructor(
+    postId,
+    userId,
+    title,
+    content,
+    views,
+    votes,
+    createdAt,
+    updatedAt
+  ) {
     this.postId = postId;
     this.userId = userId;
     this.title = title;
@@ -28,10 +37,11 @@ class Post {
     const { userId, title, content } = newPost;
     const [result] = await db
       .promise()
-      .query(
-        "INSERT INTO Posts (userId, title, content) VALUES (?, ?, ?)",
-        [userId, title, content]
-      );
+      .query("INSERT INTO Posts (userId, title, content) VALUES (?, ?, ?)", [
+        userId,
+        title,
+        content,
+      ]);
     return result.insertId;
   }
 
@@ -50,10 +60,11 @@ class Post {
     const { title, content } = data;
     const [result] = await db
       .promise()
-      .query(
-        "UPDATE Posts SET title = ?, content = ? WHERE PostId = ?",
-        [title, content, postId]
-      );
+      .query("UPDATE Posts SET title = ?, content = ? WHERE PostId = ?", [
+        title,
+        content,
+        postId,
+      ]);
     return result.affectedRows > 0;
   }
 
@@ -65,7 +76,7 @@ class Post {
   }
 
   static async votes(postId, vote) {
-    if(vote !== 1 && vote !== -1) {
+    if (vote !== 1 && vote !== -1) {
       return null;
     }
 
@@ -89,11 +100,11 @@ class Post {
     // Check if the hashtag is already added to the post
     const [existing] = await db
       .promise()
-      .query(
-        "SELECT * FROM PostHashtags WHERE postId = ? AND hashtagId = ?",
-        [postId, hashtagId]
-      );
-    
+      .query("SELECT * FROM PostHashtags WHERE postId = ? AND hashtagId = ?", [
+        postId,
+        hashtagId,
+      ]);
+
     if (existing.length > 0) {
       return null;
     }
@@ -107,6 +118,17 @@ class Post {
     return result.affectedRows > 0;
   }
 
+  // Logika pencarian artikel berdasarkan keyword
+  static async searchByKeyword(keyword) {
+    const searchKeyword = `%${keyword}%`;
+    const [results] = await db
+      .promise()
+      .query(
+        "SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id WHERE title LIKE ? OR content LIKE ?",
+        [searchKeyword, searchKeyword]
+      );
+    return results;
+  }
 }
 
 module.exports = Post;
