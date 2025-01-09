@@ -89,7 +89,7 @@ class PostController {
         return res.status(404).json({ error: "Post not found" });
       }
 
-      const hashtags = postRes.hashtags.split(',')
+      const hashtags = postRes.hashtags ? postRes.hashtags.split(',') : []
 
       res.status(200).json({
         status: "success",
@@ -133,6 +133,39 @@ class PostController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  // Get all posts with userpost record details
+  static async getAllPostsUPDetails(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const posts = await Post.findAllPostsUPDetails(userId);
+      res.status(200).json({
+        status: "success",
+        message: "All posts fetched successfully",
+        data: posts,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  // Get all bookmarked posts with userpost record details
+  static async getAllBookmarkedPostsUPDetails(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const posts = await Post.findAllBookmarkedPostsUPDetails(userId);
+      res.status(200).json({
+        status: "success",
+        message: "All posts fetched successfully",
+        data: posts,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+  
 
   static async updatePostById(req, res) {
     const { postId } = req.params;
@@ -266,6 +299,25 @@ class PostController {
       res.status(200).json({
         status: "success",
         message: "Hashtag added to post",
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async toggleBookmarkPost(req, res) {
+    const { postId } = req.params;
+    const { userId } = req.user;
+
+    try {
+      await Post.toggleBookmarkPost(userId, postId);     
+      res.status(200).json({
+        status: "success",
+        message: "Bookmark successfully toggled",
       });
     } catch (err) {
       res.status(500).json({

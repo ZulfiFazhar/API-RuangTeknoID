@@ -69,6 +69,20 @@ const createDatabase = () => {
           FOREIGN KEY (hashtagId) REFERENCES Hashtags(hashtagId) ON DELETE CASCADE
         );`
       ]
+    ,
+      [
+        "UserPosts",
+        `CREATE TABLE IF NOT EXISTS UserPosts (
+          userId INT NOT NULL,
+          postId INT NOT NULL,
+          PRIMARY KEY (userId, postId),
+          userVote TINYINT DEFAULT 0,
+          userViews INT DEFAULT 0,
+          isBookmarked BOOLEAN DEFAULT FALSE,
+          FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE,
+          FOREIGN KEY (postId) REFERENCES Posts(postId) ON DELETE CASCADE
+        );`
+      ]
   ];
 
   createDatabaseQueries.map((query) => {
