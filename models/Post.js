@@ -34,8 +34,8 @@ class Post {
       .query(`SELECT posts.*, users.name, users.email, GROUP_CONCAT(hashtags.name) AS hashtags
               FROM posts
               JOIN users ON users.id = posts.userId
-              JOIN posthashtags USING(postId)
-              JOIN hashtags USING(hashtagId)
+              LEFT JOIN posthashtags USING(postId)
+              LEFT JOIN hashtags USING(hashtagId)
               WHERE posts.postId = ?
               GROUP BY posts.postId`, [postId]);
     return results.length > 0 ? results[0] : null;
@@ -45,6 +45,40 @@ class Post {
     const [results] = await db.promise().query("SELECT * FROM Posts");
     return results;
   }
+
+  // find all posts with userpost records detail
+  static async findAllPostsUPDetails(userId) {
+    // Create userposts record of all posts for this user
+    await db
+    .promise()
+    .query(`INSERT INTO userposts (userId, postId)
+            SELECT p.userId, p.postId
+            FROM posts p
+            LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
+            WHERE up.postId IS NULL;`, [userId]);
+
+    // Get all posts with userposts records
+    const [results] = await db
+    .promise()
+    .query(`SELECT posts.*, up.* 
+            FROM posts
+            join userposts up using(postId)
+            where up.userId = ?`, [userId]);
+    return results;
+  }
+
+    // find all bookmarked posts with userpost records detail
+    static async findAllBookmarkedPostsUPDetails(userId) {
+      // Get all posts with userposts records
+      const [results] = await db
+      .promise()
+      .query(`SELECT posts.*, up.* 
+              FROM posts
+              join userposts up using(postId)
+              where up.isBookmarked = True AND up.userId = ?`, [userId]);
+      return results;
+    }
+
 
   static async createPost(newPost) {
     const { userId, title, content } = newPost;
@@ -129,6 +163,36 @@ class Post {
         hashtagId,
       ]);
     return result.affectedRows > 0;
+  }
+
+  static async toggleBookmarkPost(userId, postId) {
+    // Find userposts record to check if already exist
+    const [upExist] = await db
+      .promise()
+      .query("SELECT * FROM UserPosts WHERE userId = ? AND postId = ?", [
+        userId,
+        postId,
+      ]);
+
+    if (upExist.length > 0) {
+      // If exist, update it
+      const [result] = await db
+        .promise()
+        .query("UPDATE UserPosts SET isBookmarked = NOT isBookmarked WHERE userId = ? AND postId = ?", [
+          userId,
+          postId,
+        ]);
+      return result.affectedRows > 0;
+    } else {
+      // If not exist, create it
+      const [result] = await db
+        .promise()
+        .query("INSERT INTO UserPosts (userId, postId, isBookmarked) VALUES (?, ?, TRUE)", [
+          userId,
+          postId,
+        ]);
+      return result.affectedRows > 0;
+    }
   }
 
   // Logika pencarian artikel berdasarkan keyword

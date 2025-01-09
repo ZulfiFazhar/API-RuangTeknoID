@@ -7,7 +7,7 @@ const authMiddleware = (req, res, next) => {
   if (!token) {
     return res.status(401).json({ error: "Access denied, no token provided" });
   }
-
+  
   try {
     // Jika aktif token sudah kadaluwarsa, jwt.verify akan otomatis melempar error (tidak perlu cek manual di db)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
