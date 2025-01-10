@@ -41,6 +41,18 @@ class Post {
     return results.length > 0 ? results[0] : null;
   }
 
+  static async findPostWithHashtagsById(postId) {
+    const [results] = await db
+      .promise()
+      .query(`SELECT posts.*, GROUP_CONCAT(hashtags.hashtagId) AS hashtags
+              FROM posts
+              LEFT JOIN posthashtags USING(postId)
+              LEFT JOIN hashtags USING(hashtagId)
+              WHERE posts.postId = ?
+              GROUP BY posts.postId`, [postId]);
+    return results.length > 0 ? results[0] : null;
+  }
+
   static async findAllPosts() {
     const [results] = await db.promise().query("SELECT * FROM Posts");
     return results;
@@ -163,6 +175,32 @@ class Post {
         hashtagId,
       ]);
     return result.affectedRows > 0;
+  }
+
+  static async updateHashtags(postId, hashtagIds) {
+    // Delete all existing hashtags for the post
+    await db
+      .promise()
+      .query("DELETE FROM PostHashtags WHERE postId = ?", [postId]);
+
+    const newPostHashtagsRecord = hashtagIds.map((hashtagId) => [
+      postId,
+      hashtagId,
+    ]);
+
+    // Add new hashtags if hashtagIds is not empty
+    if (hashtagIds.length <= 0) {
+      return null;
+    }
+
+    const [result] = await db
+      .promise()
+      .query("INSERT INTO PostHashtags (postId, hashtagId) VALUES ?", [
+        newPostHashtagsRecord,
+      ]);
+
+    return result.affectedRows > 0;
+
   }
 
   static async toggleBookmarkPost(userId, postId) {

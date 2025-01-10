@@ -121,6 +121,42 @@ class PostController {
     }
   }
 
+  static async getPostWithHashtagsById(req, res) {
+    const { postId } = req.params;
+
+    try {
+      const postRes = await Post.findPostWithHashtagsById(postId);
+      if (!postRes) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      const hashtags = postRes.hashtags ? postRes.hashtags.split(',') : []
+
+      res.status(200).json({
+        status: "success",
+        message: "Post retrieved successfully",
+        data: {
+          post: {
+            postId : postRes.postId,
+            title: postRes.title,
+            content: postRes.content,
+            views: postRes.views,
+            votes: postRes.votes,
+            createdAt: postRes.createdAt,
+            updatedAt: postRes.updatedAt,
+          },
+          hashtags
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
   static async getAllPosts(req, res) {
     try {
       const posts = await Post.findAllPosts();
@@ -179,6 +215,35 @@ class PostController {
           message: "Post not found",
         });
       }
+
+      res.status(200).json({
+        status: "success",
+        message: `Post ${postId} updated successfully`,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async updatePostAndHashtagsById(req, res) {
+    const { postId } = req.params;
+    const { title, content, hashtags } = req.body;
+
+    try {
+      const updated = await Post.editPostById(postId, { title, content });
+      if (!updated) {
+        return res.status(404).json({
+          status: "error",
+          message: "Post not found",
+        });
+      }
+
+      // Update hashtags
+      const result = await Post.updateHashtags(postId, hashtags);
 
       res.status(200).json({
         status: "success",

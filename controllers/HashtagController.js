@@ -25,12 +25,27 @@ class HashtagController {
     }
   }
 
-  static async getAllHashtag(req, res) {
+  static async getAllHashtags(req, res) {
     try {
       const hashtags = await Hashtag.findAllHashtags();
       res.status(200).json({
         status: "success",
         message: "All hashtags fetched successfully",
+        data: hashtags,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async getHashtagsByPostId(req, res) {
+    const { postId } = req.params;
+
+    try {
+      const hashtags = await Hashtag.findHashtagByPostId(postId);
+      res.status(200).json({
+        status: "success",
+        message: "All post hashtags fetched successfully",
         data: hashtags,
       });
     } catch (err) {
