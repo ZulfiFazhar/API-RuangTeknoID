@@ -90,7 +90,6 @@ class PostController {
       }
 
       const hashtags = postRes.hashtags ? postRes.hashtags.split(',') : []
-
       res.status(200).json({
         status: "success",
         message: "Post retrieved successfully",

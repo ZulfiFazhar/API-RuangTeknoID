@@ -27,7 +27,8 @@ class Comment {
         "INSERT INTO Comments (userId, postId, replyTo, content) VALUES (?, ?, ?, ?)",
         [userId, postId, replyTo, content]
       );
-    return result.insertId;
+
+    return {commentId: result.insertId, ...comment};
   }
 
   static async findTopLevelCommentsByPostId(postId) {

@@ -12,7 +12,7 @@ class CommentController {
     }
 
     try {
-      const CommentId = await Comment.createCommentOrReply({
+      const newComment = await Comment.createCommentOrReply({
         userId,
         postId,
         replyTo,
@@ -21,7 +21,7 @@ class CommentController {
       return res.status(201).json({
         status: "success",
         message: "Comment or reply created successfully",
-        data: { CommentId },
+        data: newComment,
       });
     } catch (err) {
       return res.status(500).json({
