@@ -120,6 +120,23 @@ class PostController {
     }
   }
 
+  // Get a userpost record
+  static async getUPById(req, res) {
+    const { userId } = req.user;
+    const { postId } = req.params;
+
+    try {
+      const userpost = await Post.findUPById(userId, postId);
+      res.status(200).json({
+        status: "success",
+        message: "Userpost fetched successfully",
+        data: userpost,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   static async getPostWithHashtagsById(req, res) {
     const { postId } = req.params;
 
