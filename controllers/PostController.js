@@ -121,6 +121,42 @@ class PostController {
     }
   }
 
+  static async getPostWithHashtagsById(req, res) {
+    const { postId } = req.params;
+
+    try {
+      const postRes = await Post.findPostWithHashtagsById(postId);
+      if (!postRes) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      const hashtags = postRes.hashtags ? postRes.hashtags.split(',') : []
+
+      res.status(200).json({
+        status: "success",
+        message: "Post retrieved successfully",
+        data: {
+          post: {
+            postId : postRes.postId,
+            title: postRes.title,
+            content: postRes.content,
+            views: postRes.views,
+            votes: postRes.votes,
+            createdAt: postRes.createdAt,
+            updatedAt: postRes.updatedAt,
+          },
+          hashtags
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
   static async getAllPosts(req, res) {
     try {
       const posts = await Post.findAllPosts();
@@ -193,6 +229,35 @@ class PostController {
     }
   }
 
+  static async updatePostAndHashtagsById(req, res) {
+    const { postId } = req.params;
+    const { title, content, hashtags } = req.body;
+
+    try {
+      const updated = await Post.editPostById(postId, { title, content });
+      if (!updated) {
+        return res.status(404).json({
+          status: "error",
+          message: "Post not found",
+        });
+      }
+
+      // Update hashtags
+      const result = await Post.updateHashtags(postId, hashtags);
+
+      res.status(200).json({
+        status: "success",
+        message: `Post ${postId} updated successfully`,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
   static async deletePostById(req, res) {
     const { postId } = req.params;
 
@@ -220,15 +285,14 @@ class PostController {
 
   static async votes(req, res) {
     const { postId } = req.params;
-    let { vote } = req.body;
-
+    const { userId } = req.user;
+    const { vote } = req.body;
     // cast vote to integer
-    let intVote = parseInt(vote);
+    const intVote = parseInt(vote);
 
     try {
-      const updated = await Post.votes(postId, intVote);
+      const updated = await Post.votes(postId, userId, intVote);
       if (!updated) {
-        console.log("tes");
         return res.status(404).json({
           status: "error",
           message: "Post not found",
@@ -250,9 +314,10 @@ class PostController {
 
   static async addView(req, res) {
     const { postId } = req.params;
+    const { userId } = req.body;
 
     try {
-      const updated = await Post.addView(postId);
+      const updated = await Post.addView(postId, userId);
       if (!updated) {
         return res.status(404).json({
           status: "error",

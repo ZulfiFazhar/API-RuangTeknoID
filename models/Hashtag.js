@@ -13,6 +13,16 @@ class Hashtag {
     return results;
   }
 
+  static async findHashtagByPostId(postId) {
+    const [results] = await db
+      .promise()
+      .query(
+        "SELECT hashtags.* FROM Hashtags JOIN PostHashtags ON Hashtags.hashtagId = PostHashtags.hashtagId WHERE PostHashtags.postId = ?",
+        [postId]
+      );
+    return results;
+  }
+
   static async createHashtag(name) {
     const [result] = await db
       .promise()

@@ -41,6 +41,18 @@ class Post {
     return results.length > 0 ? results[0] : null;
   }
 
+  static async findPostWithHashtagsById(postId) {
+    const [results] = await db
+      .promise()
+      .query(`SELECT posts.*, GROUP_CONCAT(hashtags.hashtagId) AS hashtags
+              FROM posts
+              LEFT JOIN posthashtags USING(postId)
+              LEFT JOIN hashtags USING(hashtagId)
+              WHERE posts.postId = ?
+              GROUP BY posts.postId`, [postId]);
+    return results.length > 0 ? results[0] : null;
+  }
+
   static async findAllPosts() {
     const [results] = await db.promise().query("SELECT * FROM Posts");
     return results;
@@ -122,24 +134,58 @@ class Post {
     return result.affectedRows > 0;
   }
 
-  static async votes(postId, vote) {
-    if (vote !== 1 && vote !== -1) {
+  static async votes(postId, userId, vote) {
+    if (vote !== 1 && vote !== -1 && vote !== 0) {
       return null;
     }
+
+    // Get the current uservote value
+    const [currentUserVote] = await db
+      .promise()  
+      .query(`SELECT userVote 
+              FROM userposts 
+              WHERE postId = ? AND userId = ?`, [
+        postId,
+        userId,
+      ]);
+
+    if (currentUserVote.length === 0) {
+      return null;
+    }
+
+    // Update the votes count in the userposts table
+    const [userpostsResult] = await db
+      .promise()
+      .query("UPDATE userposts SET userVote = ? WHERE postId = ? AND userId = ?", [
+          vote,
+          postId,
+          userId
+      ]);
+
+    // New votes increment
+    const newVotesIncrement = vote - currentUserVote[0].userVote;
 
     const [result] = await db
       .promise()
       .query("UPDATE Posts SET votes = votes + ? WHERE PostId = ?", [
-        vote,
+        newVotesIncrement,
         postId,
       ]);
     return result.affectedRows > 0;
   }
 
-  static async addView(postId) {
+  static async addView(postId, userId) {
     const [result] = await db
       .promise()
       .query("UPDATE Posts SET views = views + 1 WHERE PostId = ?", [postId]);
+
+    // Update the views count in the userposts table
+    if(userId) {
+      const [userpostsResult] = await db
+        .promise()
+        .query("UPDATE UserPosts SET userViews = userViews + 1 WHERE postId = ? and userId = ?", [postId, userId]);
+    }
+
     return result.affectedRows > 0;
   }
 
@@ -163,6 +209,32 @@ class Post {
         hashtagId,
       ]);
     return result.affectedRows > 0;
+  }
+
+  static async updateHashtags(postId, hashtagIds) {
+    // Delete all existing hashtags for the post
+    await db
+      .promise()
+      .query("DELETE FROM PostHashtags WHERE postId = ?", [postId]);
+
+    const newPostHashtagsRecord = hashtagIds.map((hashtagId) => [
+      postId,
+      hashtagId,
+    ]);
+
+    // Add new hashtags if hashtagIds is not empty
+    if (hashtagIds.length <= 0) {
+      return null;
+    }
+
+    const [result] = await db
+      .promise()
+      .query("INSERT INTO PostHashtags (postId, hashtagId) VALUES ?", [
+        newPostHashtagsRecord,
+      ]);
+
+    return result.affectedRows > 0;
+
   }
 
   static async toggleBookmarkPost(userId, postId) {
