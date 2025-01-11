@@ -18,6 +18,7 @@ router.get("/get-bookmarked", authMiddleware, PostController.getAllBookmarkedPos
 router.put("/update/:postId", authMiddleware, PostController.updatePostById);
 router.put("/update-post-and-hashtags/:postId", authMiddleware, PostController.updatePostAndHashtagsById);
 router.delete("/delete/:postId", authMiddleware, PostController.deletePostById);
+router.post("/get-up/:postId", authMiddleware, PostController.getUPById);
 router.post("/get-up-details", authMiddleware, PostController.getAllPostsUPDetails);
 router.post("/votes/:postId", authMiddleware, PostController.votes);
 router.post("/add-view/:postId", PostController.addView);

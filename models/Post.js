@@ -41,6 +41,23 @@ class Post {
     return results.length > 0 ? results[0] : null;
   }
 
+  // find userposts record of a post by postId & userId
+  static async findUPById(userId, postId) {
+    // Create userposts record if not exist
+    await db
+    .promise()
+    .query(`INSERT IGNORE INTO userposts (userId, postId)
+            VALUES (?, ?);`, [userId, postId]);
+
+    // Get userpost record
+    const [results] = await db
+    .promise()
+    .query(`SELECT * 
+            FROM userposts up
+            WHERE up.userId = ? AND up.postId = ?`, [userId, postId]);
+    return results.length > 0 ? results[0] : null;
+  }
+
   static async findPostWithHashtagsById(postId) {
     const [results] = await db
       .promise()
@@ -60,14 +77,14 @@ class Post {
 
   // find all posts with userpost records detail
   static async findAllPostsUPDetails(userId) {
-    // Create userposts record of all posts for this user
+    // Create userposts record if not exist
     await db
     .promise()
     .query(`INSERT INTO userposts (userId, postId)
-            SELECT p.userId, p.postId
+            SELECT ?, p.postId
             FROM posts p
             LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
-            WHERE up.postId IS NULL;`, [userId]);
+            WHERE up.postId IS NULL;`, [userId, userId]);
 
     // Get all posts with userposts records
     const [results] = await db
@@ -79,17 +96,17 @@ class Post {
     return results;
   }
 
-    // find all bookmarked posts with userpost records detail
-    static async findAllBookmarkedPostsUPDetails(userId) {
-      // Get all posts with userposts records
-      const [results] = await db
-      .promise()
-      .query(`SELECT posts.*, up.* 
-              FROM posts
-              join userposts up using(postId)
-              where up.isBookmarked = True AND up.userId = ?`, [userId]);
-      return results;
-    }
+  // find all bookmarked posts with userpost records detail
+  static async findAllBookmarkedPostsUPDetails(userId) {
+    // Get all posts with userposts records
+    const [results] = await db
+    .promise()
+    .query(`SELECT posts.*, up.* 
+            FROM posts
+            join userposts up using(postId)
+            where up.isBookmarked = True AND up.userId = ?`, [userId]);
+    return results;
+  }
 
 
   static async createPost(newPost) {

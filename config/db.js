@@ -83,6 +83,23 @@ const createDatabase = () => {
           FOREIGN KEY (postId) REFERENCES Posts(postId) ON DELETE CASCADE
         );`
       ]
+    ,
+      [
+        "Comments", 
+        `CREATE TABLE IF NOT EXISTS Comments (
+          commentId INT AUTO_INCREMENT PRIMARY KEY, 
+          postId INT NOT NULL,                      
+          userId INT NOT NULL,                      
+          replyTo INT DEFAULT NULL,                 
+          content TEXT NOT NULL,
+          votes INT DEFAULT 0,                   
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
+          FOREIGN KEY (postId) REFERENCES Posts(postId) ON DELETE CASCADE,
+          FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE,    
+          FOREIGN KEY (replyTo) REFERENCES Comments(commentId) ON DELETE CASCADE 
+        );`      
+      ]
   ];
 
   createDatabaseQueries.map((query) => {

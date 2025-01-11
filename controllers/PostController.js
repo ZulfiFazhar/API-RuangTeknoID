@@ -90,7 +90,6 @@ class PostController {
       }
 
       const hashtags = postRes.hashtags ? postRes.hashtags.split(',') : []
-
       res.status(200).json({
         status: "success",
         message: "Post retrieved successfully",
@@ -118,6 +117,23 @@ class PostController {
         message: "Internal Server Error",
         error: err.message,
       });
+    }
+  }
+
+  // Get a userpost record
+  static async getUPById(req, res) {
+    const { userId } = req.user;
+    const { postId } = req.params;
+
+    try {
+      const userpost = await Post.findUPById(userId, postId);
+      res.status(200).json({
+        status: "success",
+        message: "Userpost fetched successfully",
+        data: userpost,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   }
 
