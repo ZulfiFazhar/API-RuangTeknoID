@@ -285,15 +285,14 @@ class PostController {
 
   static async votes(req, res) {
     const { postId } = req.params;
-    let { vote } = req.body;
-
+    const { userId } = req.user;
+    const { vote } = req.body;
     // cast vote to integer
-    let intVote = parseInt(vote);
+    const intVote = parseInt(vote);
 
     try {
-      const updated = await Post.votes(postId, intVote);
+      const updated = await Post.votes(postId, userId, intVote);
       if (!updated) {
-        console.log("tes");
         return res.status(404).json({
           status: "error",
           message: "Post not found",
@@ -315,9 +314,10 @@ class PostController {
 
   static async addView(req, res) {
     const { postId } = req.params;
+    const { userId } = req.body;
 
     try {
-      const updated = await Post.addView(postId);
+      const updated = await Post.addView(postId, userId);
       if (!updated) {
         return res.status(404).json({
           status: "error",

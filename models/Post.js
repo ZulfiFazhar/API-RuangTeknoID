@@ -134,24 +134,58 @@ class Post {
     return result.affectedRows > 0;
   }
 
-  static async votes(postId, vote) {
-    if (vote !== 1 && vote !== -1) {
+  static async votes(postId, userId, vote) {
+    if (vote !== 1 && vote !== -1 && vote !== 0) {
       return null;
     }
+
+    // Get the current uservote value
+    const [currentUserVote] = await db
+      .promise()  
+      .query(`SELECT userVote 
+              FROM userposts 
+              WHERE postId = ? AND userId = ?`, [
+        postId,
+        userId,
+      ]);
+
+    if (currentUserVote.length === 0) {
+      return null;
+    }
+
+    // Update the votes count in the userposts table
+    const [userpostsResult] = await db
+      .promise()
+      .query("UPDATE userposts SET userVote = ? WHERE postId = ? AND userId = ?", [
+          vote,
+          postId,
+          userId
+      ]);
+
+    // New votes increment
+    const newVotesIncrement = vote - currentUserVote[0].userVote;
 
     const [result] = await db
       .promise()
       .query("UPDATE Posts SET votes = votes + ? WHERE PostId = ?", [
-        vote,
+        newVotesIncrement,
         postId,
       ]);
     return result.affectedRows > 0;
   }
 
-  static async addView(postId) {
+  static async addView(postId, userId) {
     const [result] = await db
       .promise()
       .query("UPDATE Posts SET views = views + 1 WHERE PostId = ?", [postId]);
+
+    // Update the views count in the userposts table
+    if(userId) {
+      const [userpostsResult] = await db
+        .promise()
+        .query("UPDATE UserPosts SET userViews = userViews + 1 WHERE postId = ? and userId = ?", [postId, userId]);
+    }
+
     return result.affectedRows > 0;
   }
 
