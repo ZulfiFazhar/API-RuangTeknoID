@@ -9,7 +9,9 @@ class Hashtag {
   }
 
   static async findAllHashtags() {
-    const [results] = await db.promise().query("SELECT * FROM Hashtags");
+    const [results] = await db
+      .promise()
+      .query("SELECT * FROM Hashtags ORDER BY name ASC");
     return results;
   }
 
@@ -29,7 +31,6 @@ class Hashtag {
       .query("INSERT INTO Hashtags (name) VALUES (?)", [name]);
     return result.insertId;
   }
-
 }
 
 module.exports = Hashtag;
