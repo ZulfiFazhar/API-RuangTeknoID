@@ -1,5 +1,6 @@
 // controllers/PostController.js
 const Post = require("../models/Post");
+const UserLogActivity = require("../models/UserLogActivity");
 
 class PostController {
   static async createPost(req, res) {
@@ -89,14 +90,13 @@ class PostController {
         return res.status(404).json({ error: "Post not found" });
       }
 
-      const hashtags = postRes.hashtags.split(',')
-
+      const hashtags = postRes.hashtags ? postRes.hashtags.split(",") : [];
       res.status(200).json({
         status: "success",
         message: "Post retrieved successfully",
         data: {
           post: {
-            postId : postRes.postId,
+            postId: postRes.postId,
             title: postRes.title,
             content: postRes.content,
             views: postRes.views,
@@ -109,7 +109,60 @@ class PostController {
             name: postRes.name,
             email: postRes.email,
           },
-          hashtags : hashtags,
+          hashtags: hashtags,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  // Get a userpost record
+  static async getUPById(req, res) {
+    const { userId } = req.user;
+    const { postId } = req.params;
+
+    try {
+      const userpost = await Post.findUPById(userId, postId);
+      res.status(200).json({
+        status: "success",
+        message: "Userpost fetched successfully",
+        data: userpost,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async getPostWithHashtagsById(req, res) {
+    const { postId } = req.params;
+
+    try {
+      const postRes = await Post.findPostWithHashtagsById(postId);
+      if (!postRes) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+
+      const hashtags = postRes.hashtags ? postRes.hashtags.split(",") : [];
+
+      res.status(200).json({
+        status: "success",
+        message: "Post retrieved successfully",
+        data: {
+          post: {
+            postId: postRes.postId,
+            title: postRes.title,
+            content: postRes.content,
+            views: postRes.views,
+            votes: postRes.votes,
+            createdAt: postRes.createdAt,
+            updatedAt: postRes.updatedAt,
+          },
+          hashtags,
         },
       });
     } catch (err) {
@@ -134,6 +187,38 @@ class PostController {
     }
   }
 
+  // Get all posts with userpost record details
+  static async getAllPostsUPDetails(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const posts = await Post.findAllPostsUPDetails(userId);
+      res.status(200).json({
+        status: "success",
+        message: "All posts fetched successfully",
+        data: posts,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  // Get all bookmarked posts with userpost record details
+  static async getAllBookmarkedPostsUPDetails(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const posts = await Post.findAllBookmarkedPostsUPDetails(userId);
+      res.status(200).json({
+        status: "success",
+        message: "All posts fetched successfully",
+        data: posts,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   static async updatePostById(req, res) {
     const { postId } = req.params;
     const { title, content } = req.body;
@@ -146,6 +231,35 @@ class PostController {
           message: "Post not found",
         });
       }
+
+      res.status(200).json({
+        status: "success",
+        message: `Post ${postId} updated successfully`,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async updatePostAndHashtagsById(req, res) {
+    const { postId } = req.params;
+    const { title, content, hashtags } = req.body;
+
+    try {
+      const updated = await Post.editPostById(postId, { title, content });
+      if (!updated) {
+        return res.status(404).json({
+          status: "error",
+          message: "Post not found",
+        });
+      }
+
+      // Update hashtags
+      const result = await Post.updateHashtags(postId, hashtags);
 
       res.status(200).json({
         status: "success",
@@ -187,15 +301,14 @@ class PostController {
 
   static async votes(req, res) {
     const { postId } = req.params;
-    let { vote } = req.body;
-
+    const { userId } = req.user;
+    const { vote } = req.body;
     // cast vote to integer
-    let intVote = parseInt(vote);
+    const intVote = parseInt(vote);
 
     try {
-      const updated = await Post.votes(postId, intVote);
+      const updated = await Post.votes(postId, userId, intVote);
       if (!updated) {
-        console.log("tes");
         return res.status(404).json({
           status: "error",
           message: "Post not found",
@@ -217,9 +330,10 @@ class PostController {
 
   static async addView(req, res) {
     const { postId } = req.params;
+    const { userId } = req.body;
 
     try {
-      const updated = await Post.addView(postId);
+      const updated = await Post.addView(postId, userId);
       if (!updated) {
         return res.status(404).json({
           status: "error",
@@ -276,6 +390,25 @@ class PostController {
     }
   }
 
+  static async toggleBookmarkPost(req, res) {
+    const { postId } = req.params;
+    const { userId } = req.user;
+
+    try {
+      await Post.toggleBookmarkPost(userId, postId);
+      res.status(200).json({
+        status: "success",
+        message: "Bookmark successfully toggled",
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
   static async searchPostsByKeyword(req, res) {
     const { keyword } = req.query;
 
@@ -306,6 +439,25 @@ class PostController {
         message: "Internal Server Error",
         error: err.message,
       });
+    }
+  }
+
+  static async recommendArticlesByUserLog(req, res) {
+    try {
+      const userId = req.user.userId;
+      const recommendedArticles = await Post.recommendArticlesByUserLog(userId);
+      console.log(recommendedArticles);
+      if (recommendedArticles.length === 0) {
+        return res.status(404).json({ message: "No recommendations found" });
+      }
+      res.status(200).json({
+        message: "Recommended articles found",
+        status: "success",
+        data: recommendedArticles,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 }
