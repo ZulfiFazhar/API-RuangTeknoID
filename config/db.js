@@ -100,6 +100,21 @@ const createDatabase = () => {
       );`,
     ],
     [
+      "Discussions",
+      `CREATE TABLE IF NOT EXISTS Discussions (
+        discussionId INT AUTO_INCREMENT PRIMARY KEY,                      
+        userId INT NOT NULL,                      
+        answerTo INT DEFAULT NULL,
+        title VARCHAR(50) NOT NULL,                 
+        content TEXT NOT NULL,
+        votes INT DEFAULT 0,                   
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
+        FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE,    
+        FOREIGN KEY (answerTo) REFERENCES Discussions(discussionId) ON DELETE CASCADE 
+      );`,
+    ],
+    [
       "UserLogActivity",
       `CREATE TABLE IF NOT EXISTS UserLogActivity (
         logId INT AUTO_INCREMENT PRIMARY KEY,
