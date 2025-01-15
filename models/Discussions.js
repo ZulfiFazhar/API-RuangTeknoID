@@ -41,6 +41,29 @@ class Discussion {
     return results;
   }
 
+  // Find all questions with it user discussion record
+  static async findAllQuestionsWithUD(userId) {
+    // Create UD records for all questions for the logged in user
+    const [res] = await db.promise().query(
+      `INSERT INTO UserDiscussions (userId, discussionId)
+       SELECT ?, d.discussionId
+       FROM Discussions d
+       LEFT JOIN UserDiscussions ud ON d.discussionId = ud.discussionId AND ud.userId = ?
+       WHERE ud.discussionId IS NULL AND d.answerTo IS NULL`,
+      [userId, userId]
+    );
+
+    const [results] = await db
+      .promise()
+      .query(`SELECT Discussions.*, UserDiscussions.* 
+              FROM Discussions 
+              JOIN UserDiscussions ON Discussions.discussionId = UserDiscussions.discussionId 
+              WHERE Discussions.answerTo IS NULL AND UserDiscussions.userId = ?`, [userId]);
+
+    return results;
+            
+  } 
+
   static async findAnswersByDiscussionId(discussionId) {
     const [results] = await db
       .promise()
@@ -48,10 +71,30 @@ class Discussion {
     return results;
   }
 
+  static async findAnswersWithItUser(discussionId) {
+    const [results] = await db
+      .promise()
+      .query(`
+        SELECT Discussions.*, Users.name 
+        FROM Discussions 
+        JOIN Users ON Discussions.userId = Users.id 
+        WHERE Discussions.answerTo = ?
+      `, [discussionId]);
+
+    return results;
+  }
+
   static async createDiscussion(userId, title, content) {
     const [result] = await db
     .promise()
     .query("INSERT INTO Discussions (userId, title, content) VALUES (?, ?, ?)", [userId, title, content]);
+    return result.insertId;
+  }
+
+  static async createAnswer(userId, answerTo, content) {
+    const [result] = await db
+    .promise()
+    .query("INSERT INTO Discussions (userId, answerTo, content) VALUES (?, ?, ?)", [userId, answerTo, content]);
     return result.insertId;
   }
 

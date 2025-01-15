@@ -63,11 +63,57 @@ class DiscussionController {
     }
   }
 
+  static async getQuestionsWithUD(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const questions = await Discussion.findAllQuestionsWithUD(userId);
+      if(!questions) {
+        return res.status(404).json({ 
+            status: "error",
+            message: "Invalid request",
+            error: "Invalid request" 
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "All questions fetched successfully",
+        data: questions,
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        status: "error",
+        message: "Internal server error",
+        error: err.message 
+      });
+    }
+  }
+
   static async getAnswersByDiscussionId(req, res) {
     const { discussionId } = req.params;
 
     try {
       const answers = await Discussion.findAnswersByDiscussionId(discussionId);
+      res.status(200).json({
+        status: "success",
+        message: "Answers fetched successfully",
+        data: answers,
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        status: "error",
+        message: "Internal server error",
+        error: err.message 
+      });
+    }
+  }
+
+  static async getAnswersWithItUser(req, res) {
+    const { discussionId } = req.params;
+
+    try {
+      const answers = await Discussion.findAnswersWithItUser(discussionId);
       res.status(200).json({
         status: "success",
         message: "Answers fetched successfully",
@@ -92,6 +138,28 @@ class DiscussionController {
         status: "success",
         message: "Discussion created successfully",
         data: { discussionId },
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        status: "error",
+        message: "Internal server error",
+        error: err.message 
+      });
+    }
+  }
+
+  static async createAnswer(req, res) {
+    const { userId } = req.user;
+    const { answerTo, content } = req.body;
+
+    console.log(answerTo, content)
+
+    try {
+      const answerId = await Discussion.createAnswer(userId, answerTo, content);
+      res.status(201).json({
+        status: "success",
+        message: "Answer created successfully",
+        data: { answerId },
       });
     } catch (err) {
       res.status(500).json({ 
