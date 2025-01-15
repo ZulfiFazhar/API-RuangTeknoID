@@ -46,6 +46,103 @@ class DiscussionController {
     }
   }
 
+  // Get discussion with it author record
+  static async getDiscussionAuthor(req, res) {
+    const { discussionId } = req.params;
+
+    try {
+      const discussionRes = await Discussion.findDiscussionAuthor(discussionId);
+      if (!discussionRes) {
+        return res.status(404).json({ 
+            status: "error",
+            message: "Discussion not found",
+            error: "Discussion not found" 
+        });
+      }
+
+      const discussion = {
+        discussion : {
+          discussionId: discussionRes.discussionId,
+          userId: discussionRes.userId,
+          title: discussionRes.title,
+          content: discussionRes.content,
+          views: discussionRes.views,
+          votes: discussionRes.votes,
+          createdAt: discussionRes.createdAt,
+          updatedAt: discussionRes.updatedAt
+        },
+        author: {
+          userId: discussionRes.userId,
+          name: discussionRes.authorName,
+        }
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "Discussion fetched successfully",
+        data: discussion,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: err.message 
+      });
+    }
+  }
+
+  // Get discussion with it user discussion and author record
+  static async getDiscussionUDAuthor(req, res) {
+    const { discussionId } = req.params;
+    const { userId } = req.user;
+
+    try {
+      const discussionRes = await Discussion.findDiscussionUD(discussionId, userId);
+      if (!discussionRes) {
+        return res.status(404).json({ 
+            status: "error",
+            message: "Discussion not found",
+            error: "Discussion not found" 
+        });
+      }
+
+      const discussion = {
+        discussion : {
+          discussionId: discussionRes.discussionId,
+          userId: discussionRes.authorId,
+          title: discussionRes.title,
+          content: discussionRes.content,
+          views: discussionRes.views,
+          votes: discussionRes.votes,
+          createdAt: discussionRes.createdAt,
+          updatedAt: discussionRes.updatedAt
+        },
+        userDiscussion: {
+          postId: discussionRes.postId,
+          userId: discussionRes.userId,
+          discussionId: discussionRes.discussionId,
+          userVote: discussionRes.userVote,
+        },
+        author: {
+          userId: discussionRes.authorId,
+          name: discussionRes.authorName,
+        }
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "Discussion fetched successfully",
+        data: discussion,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: err.message 
+      });
+    }
+  }
+
   static async getAllQuestions(req, res) {
     try {
       const questions = await Discussion.findAllQuestions();
@@ -152,14 +249,12 @@ class DiscussionController {
     const { userId } = req.user;
     const { answerTo, content } = req.body;
 
-    console.log(answerTo, content)
-
     try {
-      const answerId = await Discussion.createAnswer(userId, answerTo, content);
+      const newAnswer = await Discussion.createAnswer(userId, answerTo, content);
       res.status(201).json({
         status: "success",
         message: "Answer created successfully",
-        data: { answerId },
+        data: { newAnswer },
       });
     } catch (err) {
       res.status(500).json({ 
@@ -174,8 +269,6 @@ class DiscussionController {
     const { userId } = req.user;
     const { discussionId } = req.params;
     const { title, content } = req.body;
-
-    console.log("tes")
 
     try {
       const discussion = await Discussion.findDiscussionById(discussionId);
@@ -213,6 +306,61 @@ class DiscussionController {
         status: "error",
         message: "Internal server error",
         error: err.message 
+      });
+    }
+  }
+
+  static async votes(req, res) {
+    const { discussionId } = req.params;
+    const { userId } = req.user;
+    const { vote } = req.body;
+    // cast vote to integer
+    const intVote = parseInt(vote);
+
+    try {
+      const updated = await Discussion.votes(discussionId, userId, intVote);
+      if (!updated) {
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion / UserDiscussion not found",
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: `Votes for discussion: ${discussionId} updated successfully`,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async incrementViews(req, res) {
+    const { discussionId } = req.params;
+    const { userId } = req.body;
+
+    try {
+      const updated = await Discussion.incrementViews(discussionId, userId);
+      if (!updated) {
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: `Views for discussion: ${discussionId} incremented successfully`,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
       });
     }
   }
