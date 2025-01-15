@@ -27,6 +27,41 @@ class Discussion {
     return results.length > 0 ? results[0] : null;
   }
 
+  // Find discusson with it author record
+  static async findDiscussionAuthor(discussionId) {
+    const [results] = await db
+      .promise()
+      .query(`SELECT Discussions.*, Users.name as authorName
+              FROM Discussions 
+              JOIN Users ON Discussions.userId = Users.id
+              WHERE discussions.discussionId = ?`, [discussionId]);
+
+    return results.length > 0 ? results[0] : null;
+  }
+
+  // Find discussion with it user discussion and author record
+  static async findDiscussionUD(discussionId, userId) {
+    // Create UD record incase it doesn't exist
+    const [res] = await db
+      .promise()
+      .query(`INSERT INTO UserDiscussions (userId, discussionId)
+              SELECT ?, ?
+              WHERE NOT EXISTS (
+                SELECT * FROM UserDiscussions WHERE userId = ? AND discussionId = ?
+              )`,
+            [userId, discussionId, userId, discussionId]);
+
+    const [results] = await db
+      .promise()
+      .query(`SELECT Discussions.*, UD.*, Users.id as authorId, Users.name as authorName
+              FROM Discussions 
+              JOIN UserDiscussions UD using(discussionId)
+              JOIN Users ON Discussions.userId = Users.id
+              WHERE discussions.discussionId = ? and UD.userId = ?`, [discussionId, userId]);
+
+    return results.length > 0 ? results[0] : null;
+  }
+
   static async findDiscussionsByUserId(userId) {
     const [results] = await db
       .promise()
@@ -95,13 +130,77 @@ class Discussion {
     const [result] = await db
     .promise()
     .query("INSERT INTO Discussions (userId, answerTo, content) VALUES (?, ?, ?)", [userId, answerTo, content]);
-    return result.insertId;
+    
+    if(result.affectedRows <= 0){
+      return null;
+    }else{
+      // Return new answer data
+      const [updatedDiscussion] = await db
+        .promise()
+        .query("SELECT * FROM Discussions WHERE discussionId = ?", [result.insertId]);
+      return updatedDiscussion[0];
+    }
   }
 
   static async updateDiscussion(discussionId, title, content) {
     const [result] = await db
     .promise()
     .query("UPDATE Discussions SET title = ?, content = ? WHERE discussionId = ?", [title, content, discussionId]);
+
+    return result.affectedRows > 0;
+  }
+
+  static async votes(discussionId, userId, vote) {
+    if (vote !== 1 && vote !== -1 && vote !== 0) {
+      return null;
+    }
+
+    // Get the current userdiscussion value
+    const [currentUserDiscussion] = await db.promise().query(
+       `SELECT userVote 
+        FROM UserDiscussions
+        WHERE discussionId = ? AND userId = ?`,
+      [discussionId, userId]
+    );
+
+    if (currentUserDiscussion.length === 0) {
+      return null;
+    }
+
+    // Update the votes count in the userdiscussion table
+    const [userDiscussionResult] = await db
+      .promise()
+      .query(
+        "UPDATE UserDiscussions SET userVote = ? WHERE discussionId = ? AND userId = ?",
+        [vote, discussionId, userId]
+      );
+
+    // New votes increment
+    const newVotesIncrement = vote - currentUserDiscussion[0].userVote;
+
+    const [result] = await db
+      .promise()
+      .query("UPDATE Discussions SET votes = votes + ? WHERE discussionId = ?", [
+        newVotesIncrement,
+        discussionId,
+      ]);
+    return result.affectedRows > 0;
+  }
+
+  static async incrementViews(discussionId, userId) {
+    if(userId){
+      // Increase the userView count
+      const [res] = await db
+        .promise()
+        .query(
+          "UPDATE UserDiscussions SET userViews = userViews + 1 WHERE discussionId = ? AND userId = ?",
+          [discussionId, userId]
+        );
+    }
+
+    const [result] = await db
+      .promise()
+      .query("UPDATE Discussions SET views = views + 1 WHERE discussionId = ?", [discussionId]);
     return result.affectedRows > 0;
   }
 

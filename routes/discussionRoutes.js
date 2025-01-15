@@ -6,6 +6,8 @@ const router = express.Router();
 
 router.get("/get-all", DiscussionController.getAllDiscussions);
 router.get("/get-byid/:discussionId", DiscussionController.getDiscussionById);
+router.get("/get-discussion-author/:discussionId", DiscussionController.getDiscussionAuthor);
+router.get("/get-discussion-ud-author/:discussionId", authMiddleware, DiscussionController.getDiscussionUDAuthor);
 router.get("/get-questions", DiscussionController.getAllQuestions);
 router.get("/get-questions-ud", authMiddleware, DiscussionController.getQuestionsWithUD);
 router.get("/get-answers/:discussionId", DiscussionController.getAnswersByDiscussionId);
@@ -13,6 +15,8 @@ router.get("/get-answers-user/:discussionId", DiscussionController.getAnswersWit
 router.post("/create", authMiddleware, DiscussionController.createDiscussion);
 router.post("/create-answer", authMiddleware, DiscussionController.createAnswer);
 router.put("/update/:discussionId", authMiddleware, DiscussionController.updateDiscussion);
+router.put("/votes/:discussionId", authMiddleware, DiscussionController.votes);
+router.put("/increment-views/:discussionId", DiscussionController.incrementViews);
 router.delete("/delete/:discussionId", authMiddleware, DiscussionController.deleteDiscussion);
 
 module.exports = router;
