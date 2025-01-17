@@ -27,6 +27,18 @@ class Discussion {
     return results.length > 0 ? results[0] : null;
   }
 
+  static async findDiscussionHashtags(discussionId) {
+    const [results] = await db
+      .promise()
+      .query(`SELECT Discussions.*, GROUP_CONCAT(Hashtags.hashtagId) as hashtags
+              FROM Discussions 
+              LEFT JOIN DiscussionHashtags using(discussionId)
+              LEFT JOIN Hashtags using(hashtagId)
+              WHERE discussionId = ?
+              GROUP BY Discussions.discussionId`, [discussionId]);
+    return results.length > 0 ? results[0] : null;
+  }
+
   // Find discusson with it author record
   static async findDiscussionAuthor(discussionId) {
     const [results] = await db
@@ -53,10 +65,12 @@ class Discussion {
 
     const [results] = await db
       .promise()
-      .query(`SELECT Discussions.*, UD.*, Users.id as authorId, Users.name as authorName
+      .query(`SELECT Discussions.*, UD.*, group_concat(Hashtags.name) as hashtags_name, Users.id as authorId, Users.name as authorName
               FROM Discussions 
               JOIN UserDiscussions UD using(discussionId)
               JOIN Users ON Discussions.userId = Users.id
+              LEFT JOIN DiscussionHashtags DH using(discussionId)
+              LEFT JOIN Hashtags using(hashtagId)
               WHERE discussions.discussionId = ? and UD.userId = ?`, [discussionId, userId]);
 
     return results.length > 0 ? results[0] : null;
@@ -110,11 +124,33 @@ class Discussion {
     const [results] = await db
       .promise()
       .query(`
-        SELECT Discussions.*, Users.name 
+        SELECT Discussions.*, Users.name as author_name, Users.id as authorId 
         FROM Discussions 
         JOIN Users ON Discussions.userId = Users.id 
         WHERE Discussions.answerTo = ?
       `, [discussionId]);
+
+    return results;
+  }
+
+  static async findAnswersUserUD(discussionId, userId) {
+    // Create UD records for all answers for the logged in user of this question 
+    await db
+      .promise()
+      .query(`INSERT INTO UserDiscussions (userId, discussionId)
+              SELECT ?, d.discussionId
+              FROM Discussions d
+              LEFT JOIN UserDiscussions ud ON d.discussionId = ud.discussionId AND ud.userId = ?
+              WHERE d.answerTo = ? AND ud.discussionId IS NULL`, [userId, userId, discussionId]);
+
+    const [results] = await db
+      .promise()
+      .query(`
+        SELECT Discussions.*, Users.id as authorId, Users.name as author_name, UserDiscussions.userId as user_discussionId, UserDiscussions.userVote as user_vote, UserDiscussions.userViews as user_views 
+        FROM Discussions 
+        JOIN Users ON Discussions.userId = Users.id 
+        JOIN UserDiscussions USING(discussionId)
+        WHERE Discussions.answerTo = ? and UserDiscussions.userId = ?`, [discussionId, userId]);
 
     return results;
   }
@@ -127,22 +163,47 @@ class Discussion {
   }
 
   static async createAnswer(userId, answerTo, content) {
-    const [result] = await db
+    const [insertAnswerRes] = await db
     .promise()
     .query("INSERT INTO Discussions (userId, answerTo, content) VALUES (?, ?, ?)", [userId, answerTo, content]);
+
+    // Create userdiscussion record for the answer
+    const [insertUDRes] = await db
+      .promise()
+      .query(`INSERT INTO UserDiscussions (userId, discussionId)
+              SELECT ?, ?`,
+            [userId, insertAnswerRes.insertId]);
     
-    if(result.affectedRows <= 0){
+    if(insertAnswerRes.affectedRows <= 0){
       return null;
     }else{
       // Return new answer data
-      const [updatedDiscussion] = await db
+      const [newAnswer] = await db
         .promise()
-        .query("SELECT * FROM Discussions WHERE discussionId = ?", [result.insertId]);
-      return updatedDiscussion[0];
+        .query(`SELECT Discussions.*, Users.id as authorId, Users.name as author_name, UserDiscussions.userId as user_discussionId,        UserDiscussions.userVote as user_vote, UserDiscussions.userViews as user_views 
+                FROM Discussions 
+                JOIN Users ON Discussions.userId = Users.id 
+                JOIN UserDiscussions USING(discussionId)
+                WHERE Discussions.discussionId = ? and UserDiscussions.userId = ?`, [insertAnswerRes.insertId, userId]);
+      return newAnswer[0];
     }
   }
 
-  static async updateDiscussion(discussionId, title, content) {
+  static async updateDiscussion(discussionId, title, content, newHashtags) {
+    // Delete all existing hashtags
+    const [res] = await db
+      .promise()
+      .query("DELETE FROM DiscussionHashtags WHERE discussionId = ?", [discussionId]);
+    
+    // Add new hashtags
+    if(Array.isArray(newHashtags) && newHashtags.length > 0){
+      const values = newHashtags.map(hashtagId => "(? , ?)").join(",");
+      const params = newHashtags.flatMap(hashtagId => [discussionId, hashtagId]);
+      const [insertHashtagsRes] = await db
+        .promise()
+        .query(`INSERT INTO DiscussionHashtags (discussionId, hashtagId) VALUES ${values}`, params);
+    }
+
     const [result] = await db
     .promise()
     .query("UPDATE Discussions SET title = ?, content = ? WHERE discussionId = ?", [title, content, discussionId]);
@@ -208,6 +269,20 @@ class Discussion {
     const [result] = await db
     .promise()
     .query("DELETE FROM Discussions WHERE discussionId = ?", [discussionId]);
+    return result.affectedRows > 0;
+  }
+
+  static async addHashtags(discussionId, hashtagIds) {
+    if(!Array.isArray(hashtagIds) || hashtagIds.length === 0){
+      return false;
+    }
+
+    const values = hashtagIds.map(hashtagId => "(? , ?)").join(",");
+    const params = hashtagIds.flatMap(hashtagId => [discussionId, hashtagId]);
+
+    const [result] = await db
+      .promise()
+      .query(`INSERT IGNORE INTO DiscussionHashtags (discussionId, hashtagId) VALUES ${values}`, params);
     return result.affectedRows > 0;
   }
   

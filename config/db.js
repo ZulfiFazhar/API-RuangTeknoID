@@ -128,6 +128,16 @@ const createDatabase = () => {
       );`,
     ],
     [
+      "DiscussionHashtags",
+      `CREATE TABLE IF NOT EXISTS DiscussionHashtags (
+        discussionId INT NOT NULL,
+        hashtagId INT NOT NULL,
+        PRIMARY KEY (discussionId, hashtagId),
+        FOREIGN KEY (discussionId) REFERENCES Discussions(discussionId) ON DELETE CASCADE,
+        FOREIGN KEY (hashtagId) REFERENCES Hashtags(hashtagId) ON DELETE CASCADE
+      );`,
+    ],
+    [
       "UserLogActivity",
       `CREATE TABLE IF NOT EXISTS UserLogActivity (
         logId INT AUTO_INCREMENT PRIMARY KEY,
