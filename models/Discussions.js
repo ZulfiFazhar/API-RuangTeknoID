@@ -53,10 +53,12 @@ class Discussion {
 
     const [results] = await db
       .promise()
-      .query(`SELECT Discussions.*, UD.*, Users.id as authorId, Users.name as authorName
+      .query(`SELECT Discussions.*, UD.*, group_concat(Hashtags.name) as hashtags_name, Users.id as authorId, Users.name as authorName
               FROM Discussions 
               JOIN UserDiscussions UD using(discussionId)
               JOIN Users ON Discussions.userId = Users.id
+              LEFT JOIN DiscussionHashtags DH using(discussionId)
+              LEFT JOIN Hashtags using(hashtagId)
               WHERE discussions.discussionId = ? and UD.userId = ?`, [discussionId, userId]);
 
     return results.length > 0 ? results[0] : null;
@@ -208,6 +210,20 @@ class Discussion {
     const [result] = await db
     .promise()
     .query("DELETE FROM Discussions WHERE discussionId = ?", [discussionId]);
+    return result.affectedRows > 0;
+  }
+
+  static async addHashtags(discussionId, hashtagIds) {
+    if(!Array.isArray(hashtagIds) || hashtagIds.length === 0){
+      return false;
+    }
+
+    const values = hashtagIds.map(hashtagId => "(? , ?)").join(",");
+    const params = hashtagIds.flatMap(hashtagId => [discussionId, hashtagId]);
+
+    const [result] = await db
+      .promise()
+      .query(`INSERT IGNORE INTO DiscussionHashtags (discussionId, hashtagId) VALUES ${values}`, params);
     return result.affectedRows > 0;
   }
   

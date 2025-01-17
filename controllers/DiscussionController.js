@@ -129,6 +129,10 @@ class DiscussionController {
         }
       }
 
+      if(discussionRes.hashtags_name) {
+        discussion.hashtags = discussionRes.hashtags_name.split(',');
+      }
+
       res.status(200).json({
         status: "success",
         message: "Discussion fetched successfully",
@@ -231,6 +235,31 @@ class DiscussionController {
 
     try {
       const discussionId = await Discussion.createDiscussion(userId, title, content);
+      res.status(201).json({
+        status: "success",
+        message: "Discussion created successfully",
+        data: { discussionId },
+      });
+    } catch (err) {
+      res.status(500).json({ 
+        status: "error",
+        message: "Internal server error",
+        error: err.message 
+      });
+    }
+  }
+
+  static async createDiscussionWithHashtags(req, res) {
+    const { userId } = req.user;
+    const { title, content, hashtags } = req.body;
+
+    try {
+      const discussionId = await Discussion.createDiscussion(userId, title, content);
+
+      if(Array.isArray(hashtags) && hashtags.length > 0) {
+        await Discussion.addHashtags(discussionId, hashtags);
+      }
+
       res.status(201).json({
         status: "success",
         message: "Discussion created successfully",

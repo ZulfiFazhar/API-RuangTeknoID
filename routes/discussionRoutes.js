@@ -13,6 +13,7 @@ router.get("/get-questions-ud", authMiddleware, DiscussionController.getQuestion
 router.get("/get-answers/:discussionId", DiscussionController.getAnswersByDiscussionId);
 router.get("/get-answers-user/:discussionId", DiscussionController.getAnswersWithItUser);
 router.post("/create", authMiddleware, DiscussionController.createDiscussion);
+router.post("/create-hashtags", authMiddleware, DiscussionController.createDiscussionWithHashtags);
 router.post("/create-answer", authMiddleware, DiscussionController.createAnswer);
 router.put("/update/:discussionId", authMiddleware, DiscussionController.updateDiscussion);
 router.put("/votes/:discussionId", authMiddleware, DiscussionController.votes);
