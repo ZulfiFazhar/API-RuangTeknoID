@@ -8,6 +8,7 @@ const hashtagRoutes = require("./routes/hashtagRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const discussionRoutes = require("./routes/discussionRoutes");
 const userActivityLog = require("./routes/userActivityLogRoutes");
+const unsplashRoutes = require("./routes/unsplashRoutes");
 require("dotenv").config();
 
 const corsOptions = {
@@ -30,6 +31,7 @@ app.use("/hashtag", hashtagRoutes);
 app.use("/comment", commentRoutes);
 app.use("/discussion", discussionRoutes);
 app.use("/activity", userActivityLog);
+app.use("/unsplash", unsplashRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Ruang Tekno ID API");
