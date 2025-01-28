@@ -77,7 +77,11 @@ class Post {
   }
 
   static async findAllPosts() {
-    const [results] = await db.promise().query("SELECT * FROM Posts");
+    const [results] = await db
+      .promise()
+      .query(
+        "SELECT postId, p.title, p.image_cover, u.name as author, p.content, p.votes, p.createdAt, GROUP_CONCAT(hashtags.name) AS hashtags FROM posts p JOIN users u on u.id = p.userId LEFT JOIN posthashtags USING(postId) LEFT JOIN hashtags USING(hashtagId) GROUP BY postId;"
+      );
     return results;
   }
 
@@ -118,14 +122,13 @@ class Post {
   }
 
   static async createPost(newPost) {
-    const { userId, title, content } = newPost;
+    const { userId, title, image_cover, content } = newPost;
     const [result] = await db
       .promise()
-      .query("INSERT INTO Posts (userId, title, content) VALUES (?, ?, ?)", [
-        userId,
-        title,
-        content,
-      ]);
+      .query(
+        "INSERT INTO Posts (userId, title, image_cover, content) VALUES (?, ?, ?, ?)",
+        [userId, title, image_cover, content]
+      );
     return result.insertId;
   }
 
@@ -324,7 +327,7 @@ class Post {
 
       // Step 2: Ambil semua artikel dari database
       const [articles] = await db.promise().query(`
-      SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
+      SELECT postId, p.title, p.image_cover, u.name as author, p.content, p.votes, p.createdAt, GROUP_CONCAT(hashtags.name) AS hashtags FROM posts p JOIN users u on u.id = p.userId LEFT JOIN posthashtags USING(postId) LEFT JOIN hashtags USING(hashtagId) GROUP BY postId;
     `);
 
       if (!articles || articles.length === 0) {
