@@ -319,14 +319,49 @@ class Post {
     }
   }
 
+  static async authSearchByKeyword(userId, keyword) {
+    const searchKeyword = `%${keyword}%`;
+
+    // Create userposts record if not exist
+    await db.promise().query(
+      `INSERT INTO userposts (userId, postId)
+            SELECT ?, p.postId
+            FROM posts p
+            LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
+            WHERE up.postId IS NULL;`,
+      [userId, userId]
+    );
+
+    const [results] = await db.promise().query(
+      `SELECT posts.postId, posts.title, posts.image_cover, posts.content, posts.views, posts.votes, posts.userId, posts.createdAt, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+      FROM posts
+      JOIN userposts up USING(postId) 
+      JOIN users u ON posts.userId = u.id 
+      LEFT JOIN posthashtags ph USING(postId) 
+      LEFT JOIN hashtags h USING(hashtagId) 
+      LEFT JOIN comments c USING(postId)
+      WHERE up.userId = ? AND (posts.title LIKE ? OR posts.content LIKE ?)
+      GROUP BY posts.postId, posts.title, posts.content, posts.userId, posts.createdAt, up.userId, up.postId, u.name`,
+      [userId, searchKeyword, searchKeyword]
+    );
+    return results;
+  }
+
   static async searchByKeyword(keyword) {
     const searchKeyword = `%${keyword}%`;
-    const [results] = await db
-      .promise()
-      .query(
-        "SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id WHERE title LIKE ? OR content LIKE ?",
-        [searchKeyword, searchKeyword]
-      );
+
+    const [results] = await db.promise().query(
+      `SELECT posts.postId, posts.title, posts.image_cover, posts.content, posts.views, posts.votes, posts.userId, posts.createdAt, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+      FROM posts
+      JOIN userposts up USING(postId) 
+      JOIN users u ON posts.userId = u.id 
+      LEFT JOIN posthashtags ph USING(postId) 
+      LEFT JOIN hashtags h USING(hashtagId) 
+      LEFT JOIN comments c USING(postId)
+      WHERE (posts.title LIKE ? OR posts.content LIKE ?)
+      GROUP BY posts.postId, posts.title, posts.content, posts.userId, posts.createdAt, up.userId, up.postId, u.name`,
+      [searchKeyword, searchKeyword]
+    );
     return results;
   }
 
@@ -351,9 +386,9 @@ class Post {
       }
 
       // Step 2: Ambil semua artikel dari database
-    //   const [articles] = await db.promise().query(`
-    //   SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
-    // `);
+      //   const [articles] = await db.promise().query(`
+      //   SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
+      // `);
 
       // Create userposts record if not exist
       await db.promise().query(
@@ -365,7 +400,7 @@ class Post {
         [userId, userId]
       );
 
-      // Get all posts with userposts records 
+      // Get all posts with userposts records
       const [articles] = await db.promise().query(
         `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
               FROM posts

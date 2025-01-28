@@ -429,9 +429,41 @@ class PostController {
     }
   }
 
+  static async authSearchPostsByKeyword(req, res) {
+    const { userId } = req.user;
+    const { keyword } = req.query;
+    if (!keyword) {
+      return res.status(400).json({
+        status: "error",
+        message: "Keyword is required for searching posts",
+      });
+    }
+
+    try {
+      const posts = await Post.authSearchByKeyword(userId, keyword);
+      if (posts.length === 0) {
+        return res.status(404).json({
+          status: "error",
+          message: "No article found matching the keyword",
+        });
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "Articles found",
+        data: posts,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
   static async searchPostsByKeyword(req, res) {
     const { keyword } = req.query;
-
     if (!keyword) {
       return res.status(400).json({
         status: "error",
