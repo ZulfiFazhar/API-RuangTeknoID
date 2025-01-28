@@ -11,7 +11,10 @@ router.post(
   PostController.createPostWithHashtags
 );
 router.get("/get", PostController.getAllPosts);
-router.get("/get-detail-unauthenticated", PostController.getPostsDetailsUnauthenticated);
+router.get(
+  "/get-detail-unauthenticated",
+  PostController.getPostsDetailsUnauthenticated
+);
 router.get("/get/:postId", PostController.getPostById);
 router.get("/get-detail/:postId", PostController.getPostDetailById);
 router.get(
@@ -43,6 +46,11 @@ router.post(
   "/toggle-bookmark/:postId",
   authMiddleware,
   PostController.toggleBookmarkPost
+);
+router.get(
+  "/auth-search",
+  authMiddleware,
+  PostController.authSearchPostsByKeyword
 );
 router.get("/search", PostController.searchPostsByKeyword);
 router.get(
