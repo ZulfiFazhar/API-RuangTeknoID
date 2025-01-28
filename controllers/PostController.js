@@ -29,14 +29,19 @@ class PostController {
 
   static async createPostWithHashtags(req, res) {
     const { userId } = req.user;
-    const { title, content, hashtags } = req.body;
+    const { title, content, image_cover, hashtags } = req.body;
 
-    if (!userId || !title || !content) {
+    if (!userId || !title || !image_cover || !content) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
     try {
-      const postId = await Post.createPost({ userId, title, content });
+      const postId = await Post.createPost({
+        userId,
+        title,
+        image_cover,
+        content,
+      });
 
       if (hashtags.length > 0) {
         hashtags.forEach(async (hashtag) => {
@@ -98,6 +103,7 @@ class PostController {
           post: {
             postId: postRes.postId,
             title: postRes.title,
+            image_cover: postRes.image_cover,
             content: postRes.content,
             views: postRes.views,
             votes: postRes.votes,

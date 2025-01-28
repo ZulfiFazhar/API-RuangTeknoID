@@ -43,6 +43,7 @@ db.connect((err) => {
 //         postId INT PRIMARY KEY AUTO_INCREMENT,
 //         userId INT NOT NULL,
 //         title VARCHAR(50) NOT NULL,
+//         image_cover TEXT,
 //         content TEXT,
 //         views INT DEFAULT 0,
 //         votes INT DEFAULT 0,
