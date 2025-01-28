@@ -203,6 +203,20 @@ class PostController {
     }
   }
 
+  // Get all posts details for unauthenticated user
+  static async getPostsDetailsUnauthenticated(req, res) {
+    try {
+      const posts = await Post.findPostsDetailsUnauthenticated();
+      res.status(200).json({
+        status: "success",
+        message: "All posts fetched successfully",
+        data: posts,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   // Get all bookmarked posts with userpost record details
   static async getAllBookmarkedPostsUPDetails(req, res) {
     const { userId } = req.user;

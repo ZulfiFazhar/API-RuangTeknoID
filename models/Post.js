@@ -104,14 +104,39 @@ class Post {
     return results;
   }
 
+  // find all posts detailed for unauthenticated user
+  static async findPostsDetailsUnauthenticated(userId) {
+    // Get all posts detailed
+    const [articles] = await db.promise().query(
+      `SELECT posts.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+          FROM posts
+          left join userposts up using(postId)
+          join users u on posts.userId = u.id
+          left join posthashtags ph using(postId)
+          left join hashtags h using(hashtagId)
+          left join comments c using(postId)
+          group by posts.postId`,
+      [userId]
+    );
+
+    // console.log(articles);
+
+    return articles;
+  }
+
   // find all bookmarked posts with userpost records detail
   static async findAllBookmarkedPostsUPDetails(userId) {
     // Get all posts with userposts records
     const [results] = await db.promise().query(
-      `SELECT posts.*, up.* 
-            FROM posts
-            join userposts up using(postId)
-            where up.isBookmarked = True AND up.userId = ?`,
+      `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+              FROM posts
+              join userposts up using(postId)
+              join users u on posts.userId = u.id
+              left join posthashtags ph using(postId)
+              left join hashtags h using(hashtagId)
+              left join comments c using(postId)
+              where up.userId = ? and up.isBookmarked = TRUE
+              group by posts.postId`,
       [userId]
     );
     return results;
@@ -323,9 +348,33 @@ class Post {
       }
 
       // Step 2: Ambil semua artikel dari database
-      const [articles] = await db.promise().query(`
-      SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
-    `);
+    //   const [articles] = await db.promise().query(`
+    //   SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
+    // `);
+
+      // Create userposts record if not exist
+      await db.promise().query(
+        `INSERT INTO userposts (userId, postId)
+              SELECT ?, p.postId
+              FROM posts p
+              LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
+              WHERE up.postId IS NULL;`,
+        [userId, userId]
+      );
+
+      // Get all posts with userposts records 
+      const [articles] = await db.promise().query(
+        `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+              FROM posts
+              join userposts up using(postId)
+              join users u on posts.userId = u.id
+              left join posthashtags ph using(postId)
+              left join hashtags h using(hashtagId)
+              left join comments c using(postId)
+              where up.userId = ?
+              group by posts.postId`,
+        [userId]
+      );
 
       if (!articles || articles.length === 0) {
         return [];
