@@ -400,7 +400,7 @@ class Post {
         [userId, userId]
       );
 
-      // Get all posts with userposts records
+      // Get all posts with detailed information
       const [articles] = await db.promise().query(
         `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
               FROM posts
