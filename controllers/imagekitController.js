@@ -1,13 +1,11 @@
 const imagekit = require("../config/imagekit.config");
 const path = require("path");
 const uuid = require("uuid");
+const Imagekit = require("../models/Imagekit");
 
 class ImagekitController {
   static async uploadImage(req, res) {
     if (req.file) {
-      const strFile = req.file.buffer.toString("base64");
-      const fileName = uuid.v4() + path.extname(req.file.originalname);
-
       // responseData = await imagekit.upload({
       //     file : strFile,
       //     fileName : fileName,
@@ -17,56 +15,46 @@ class ImagekitController {
       //     else console.log(result);
       // });
 
-      imagekit
-        .upload({
-          file: strFile,
-          fileName: fileName,
-        })
-        .then((response) => {
-          res.status(200).json({
-            status: "success",
-            message: "Image uploaded successfully",
-            data: response,
-          });
-        })
-        .catch((error) => {
-          console.log(error);
+      const response = await Imagekit.uploadImage(req.file);
+
+      if(response){
+        return res.status(200).json({
+          status: "success",
+          message: "Image uploaded successfully",
+          data: response,
         });
-    } else {
-      res.status(400).json({
+      }
+
+      return res.status(400).json({
         status: "error",
-        message: "Image not found",
+        message: "Error uploading image",
       });
     }
 
-    // console.log(responseData);
-
-    // res.status(200).json({
-    //     status: "success",
-    //     message: "Image uploaded successfully",
-    //     data : responseData,
-    // });
+    return res.status(400).json({
+      status: "error",
+      message: "Image not found",
+    });
   }
 
   static async deleteImage(req, res) {
     const fileId = req.params.fileId;
 
-    imagekit
-      .deleteFile(fileId)
-      .then((response) => {
-        res.status(200).json({
-          status: "success",
-          message: "Image deleted successfully",
-          data: response,
-        });
-      })
-      .catch((error) => {
-        res.status(500).json({
-          status: "error",
-          message: "Error deleting image",
-          error: error,
-        });
+    const response = await Imagekit.deleteImage(fileId);
+
+    if(response){
+      return res.status(200).json({
+        status: "success",
+        message: "Image deleted successfully",
+        data: response,
       });
+    }
+
+    return res.status(500).json({
+      status: "error",
+      message: "Error deleting image",
+      error: error,
+    });
   }
 }
 
