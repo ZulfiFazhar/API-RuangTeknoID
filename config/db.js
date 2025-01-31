@@ -151,10 +151,14 @@ const createDatabase = () => {
     [
       "UserProfiles",
       `CREATE TABLE IF NOT EXISTS UserProfiles (
-        userId INT NOT NULL,
+        userId INT NOT NULL PRIMARY KEY,
+        username VARCHAR(50) DEFAULT NULL,
+        full_name VARCHAR(50) DEFAULT NULL,
         bio TEXT DEFAULT NULL,
-        image_profile varchar(255) DEFAULT NULL,
-        PRIMARY KEY (userId),
+        profile_image_id VARCHAR(255) DEFAULT NULL,
+        profile_image_url VARCHAR(255) DEFAULT NULL,
+        location VARCHAR(50) DEFAULT NULL,
+        personal_url VARCHAR(255) DEFAULT NULL,
         FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
       );`,
     ],
@@ -171,6 +175,6 @@ const createDatabase = () => {
   });
 };
 
-// createDatabase();
+createDatabase();
 
 module.exports = db;

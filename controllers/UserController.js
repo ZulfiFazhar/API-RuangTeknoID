@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
 const User = require("../models/User");
+const imagekitController = require("./imagekitController");
 
 class UserController {
   static async register(req, res) {
@@ -264,15 +265,64 @@ class UserController {
           message: "User not found",
         });
       }
+      const formattedUser = {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.created_at,
+        username: user.username,
+        full_name: user.full_name,
+        bio: user.bio,
+        profile_image_id: user.profile_image_id,
+        profile_image_url: user.profile_image_url,
+        location: user.location,
+        personal_url: user.personal_url,
+      }
+
       res.status(200).json({
         status: "success",
         message: "User retrieved successfully",
-        data: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          createdAt: user.created_at,
-        },
+        data: formattedUser,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+  }
+
+  // Metode Mengambil Profil Pengguna Berdasarkan ID dengan Detail Profil
+  static async getDetailedUser(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const user = await User.findDetailed(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
+      }
+
+      const formattedUser = {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        bio: user.bio,
+        profile_image_id: user.profile_image_id,
+        profile_image_url: user.profile_image_url,
+        location: user.location,
+        personal_url: user.personal_url,
+      }
+
+      res.status(200).json({
+        status: "success",
+        message: "User retrieved successfully",
+        data: formattedUser,
       });
     } catch (err) {
       res.status(500).json({
@@ -316,6 +366,22 @@ class UserController {
         error: err.message,
       });
     }
+  }
+
+  static async updateProfile(req, res) {
+    const { userId } = req.user;
+    const data = JSON.parse(req.body.data);
+
+    const result = await User.updateProfile(userId, data, req.file);
+
+    if (result) {
+      return res.status(200).json({
+        status: "success",
+        message: "Profile updated successfully",
+        data: true,
+      });
+    }
+
   }
 
   // Metode Menghapus Pengguna
