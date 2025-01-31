@@ -11,10 +11,10 @@ class DiscussionController {
         data: discussions,
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -25,10 +25,10 @@ class DiscussionController {
     try {
       const discussion = await Discussion.findDiscussionById(discussionId);
       if (!discussion) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
@@ -41,7 +41,7 @@ class DiscussionController {
       res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -52,10 +52,10 @@ class DiscussionController {
     try {
       const discussion = await Discussion.findDiscussionHashtags(discussionId);
       if (!discussion) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
@@ -68,7 +68,7 @@ class DiscussionController {
       res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -80,15 +80,15 @@ class DiscussionController {
     try {
       const discussionRes = await Discussion.findDiscussionAuthor(discussionId);
       if (!discussionRes) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
       const discussion = {
-        discussion : {
+        discussion: {
           discussionId: discussionRes.discussionId,
           userId: discussionRes.userId,
           title: discussionRes.title,
@@ -96,13 +96,13 @@ class DiscussionController {
           views: discussionRes.views,
           votes: discussionRes.votes,
           createdAt: discussionRes.createdAt,
-          updatedAt: discussionRes.updatedAt
+          updatedAt: discussionRes.updatedAt,
         },
         author: {
           userId: discussionRes.userId,
           name: discussionRes.authorName,
-        }
-      }
+        },
+      };
 
       res.status(200).json({
         status: "success",
@@ -113,7 +113,7 @@ class DiscussionController {
       res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -124,17 +124,20 @@ class DiscussionController {
     const { userId } = req.user;
 
     try {
-      const discussionRes = await Discussion.findDiscussionUD(discussionId, userId);
+      const discussionRes = await Discussion.findDiscussionUD(
+        discussionId,
+        userId
+      );
       if (!discussionRes) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
       const discussion = {
-        discussion : {
+        discussion: {
           discussionId: discussionRes.discussionId,
           userId: discussionRes.authorId,
           title: discussionRes.title,
@@ -142,7 +145,7 @@ class DiscussionController {
           views: discussionRes.views,
           votes: discussionRes.votes,
           createdAt: discussionRes.createdAt,
-          updatedAt: discussionRes.updatedAt
+          updatedAt: discussionRes.updatedAt,
         },
         userDiscussion: {
           postId: discussionRes.postId,
@@ -153,11 +156,11 @@ class DiscussionController {
         author: {
           userId: discussionRes.authorId,
           name: discussionRes.authorName,
-        }
-      }
+        },
+      };
 
-      if(discussionRes.hashtags_name) {
-        discussion.hashtags = discussionRes.hashtags_name.split(',');
+      if (discussionRes.hashtags_name) {
+        discussion.hashtags = discussionRes.hashtags_name.split(",");
       }
 
       res.status(200).json({
@@ -169,7 +172,7 @@ class DiscussionController {
       res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -183,10 +186,10 @@ class DiscussionController {
         data: questions,
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -196,11 +199,11 @@ class DiscussionController {
 
     try {
       const questions = await Discussion.findAllQuestionsWithUD(userId);
-      if(!questions) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Invalid request",
-            error: "Invalid request" 
+      if (!questions) {
+        return res.status(404).json({
+          status: "error",
+          message: "Invalid request",
+          error: "Invalid request",
         });
       }
 
@@ -210,10 +213,10 @@ class DiscussionController {
         data: questions,
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -229,10 +232,10 @@ class DiscussionController {
         data: answers,
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -243,9 +246,9 @@ class DiscussionController {
     try {
       const results = await Discussion.findAnswersWithItUser(discussionId);
 
-      const answers = results.map(res => {
-        return (
-          { discussion : {
+      const answers = results.map((res) => {
+        return {
+          discussion: {
             discussionId: res.discussionId,
             userId: res.userId,
             title: res.title,
@@ -253,13 +256,13 @@ class DiscussionController {
             views: res.views,
             votes: res.votes,
             createdAt: res.createdAt,
-            updatedAt: res.updatedAt
+            updatedAt: res.updatedAt,
           },
-            author : {
-              userId: res.authorId,
-              name: res.author_name
-            }
-        })
+          author: {
+            userId: res.authorId,
+            name: res.author_name,
+          },
+        };
       });
 
       res.status(200).json({
@@ -268,10 +271,10 @@ class DiscussionController {
         data: answers,
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -283,8 +286,9 @@ class DiscussionController {
     try {
       const results = await Discussion.findAnswersUserUD(discussionId, userId);
 
-      const answers = results.map(res => {
-        return ({ discussion : {
+      const answers = results.map((res) => {
+        return {
+          discussion: {
             discussionId: res.discussionId,
             userId: res.authorId,
             title: res.title,
@@ -292,7 +296,7 @@ class DiscussionController {
             views: res.views,
             votes: res.votes,
             createdAt: res.createdAt,
-            updatedAt: res.updatedAt
+            updatedAt: res.updatedAt,
           },
           author: {
             userId: res.authorId,
@@ -301,9 +305,9 @@ class DiscussionController {
           userDiscussion: {
             userId: res.user_discussionId,
             userVote: res.user_vote,
-            userViews: res.user_views
-          }
-        })
+            userViews: res.user_views,
+          },
+        };
       });
 
       res.status(200).json({
@@ -312,10 +316,10 @@ class DiscussionController {
         data: answers,
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -325,17 +329,21 @@ class DiscussionController {
     const { title, content } = req.body;
 
     try {
-      const discussionId = await Discussion.createDiscussion(userId, title, content);
+      const discussionId = await Discussion.createDiscussion(
+        userId,
+        title,
+        content
+      );
       res.status(201).json({
         status: "success",
         message: "Discussion created successfully",
         data: { discussionId },
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -345,9 +353,13 @@ class DiscussionController {
     const { title, content, hashtags } = req.body;
 
     try {
-      const discussionId = await Discussion.createDiscussion(userId, title, content);
+      const discussionId = await Discussion.createDiscussion(
+        userId,
+        title,
+        content
+      );
 
-      if(Array.isArray(hashtags) && hashtags.length > 0) {
+      if (Array.isArray(hashtags) && hashtags.length > 0) {
         await Discussion.addHashtags(discussionId, hashtags);
       }
 
@@ -357,10 +369,10 @@ class DiscussionController {
         data: { discussionId },
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -372,8 +384,8 @@ class DiscussionController {
     try {
       const result = await Discussion.createAnswer(userId, answerTo, content);
 
-      const newAnswer = { 
-        discussion : {
+      const newAnswer = {
+        discussion: {
           discussionId: result.discussionId,
           userId: result.authorId,
           title: result.title,
@@ -381,7 +393,7 @@ class DiscussionController {
           views: result.views,
           votes: result.votes,
           createdAt: result.createdAt,
-          updatedAt: result.updatedAt
+          updatedAt: result.updatedAt,
         },
         author: {
           userId: result.authorId,
@@ -390,9 +402,9 @@ class DiscussionController {
         userDiscussion: {
           userId: result.user_discussionId,
           userVote: result.user_vote,
-          userViews: result.user_views
-        }
-      }
+          userViews: result.user_views,
+        },
+      };
 
       res.status(201).json({
         status: "success",
@@ -400,10 +412,59 @@ class DiscussionController {
         data: { newAnswer },
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
+      });
+    }
+  }
+
+  static async createBotAnswer(req, res) {
+    const { answerTo, content } = req.body;
+
+    try {
+      const result = await Discussion.createBotAnswer(answerTo, content);
+
+      if (!result) {
+        return res.status(400).json({
+          status: "error",
+          message: "Failed to create bot answer",
+        });
+      }
+
+      const newAnswer = {
+        discussion: {
+          discussionId: result.discussionId,
+          userId: result.authorId,
+          title: result.title,
+          content: result.content,
+          views: result.views,
+          votes: result.votes,
+          createdAt: result.createdAt,
+          updatedAt: result.updatedAt,
+        },
+        author: {
+          userId: result.authorId,
+          name: result.author_name,
+        },
+        userDiscussion: {
+          userId: result.user_discussionId,
+          userVote: result.user_vote,
+          userViews: result.user_views,
+        },
+      };
+
+      res.status(201).json({
+        status: "success",
+        message: "Bot answer created successfully",
+        data: { newAnswer },
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: err.message,
       });
     }
   }
@@ -416,27 +477,32 @@ class DiscussionController {
     try {
       const discussion = await Discussion.findDiscussionById(discussionId);
       if (!discussion) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
       if (discussion.userId !== userId) {
-        return res.status(403).json({ 
-            status: "error",
-            message: "Forbidden",
-            error: "You are not allowed to update this discussion" 
+        return res.status(403).json({
+          status: "error",
+          message: "Forbidden",
+          error: "You are not allowed to update this discussion",
         });
       }
-      
-      const result = await Discussion.updateDiscussion(discussionId, title, content, hashtags);
+
+      const result = await Discussion.updateDiscussion(
+        discussionId,
+        title,
+        content,
+        hashtags
+      );
       if (!result) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
@@ -445,10 +511,10 @@ class DiscussionController {
         message: "Discussion updated successfully",
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
@@ -514,27 +580,27 @@ class DiscussionController {
     try {
       const discussion = await Discussion.findDiscussionById(discussionId);
       if (!discussion) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
       if (discussion.userId !== userId) {
-        return res.status(403).json({ 
-            status: "error",
-            message: "Forbidden",
-            error: "You are not allowed to delete this discussion" 
+        return res.status(403).json({
+          status: "error",
+          message: "Forbidden",
+          error: "You are not allowed to delete this discussion",
         });
       }
 
       const result = await Discussion.deleteDiscussionById(discussionId);
       if (!result) {
-        return res.status(404).json({ 
-            status: "error",
-            message: "Discussion not found",
-            error: "Discussion not found" 
+        return res.status(404).json({
+          status: "error",
+          message: "Discussion not found",
+          error: "Discussion not found",
         });
       }
 
@@ -543,10 +609,10 @@ class DiscussionController {
         message: "Discussion deleted successfully",
       });
     } catch (err) {
-      res.status(500).json({ 
+      res.status(500).json({
         status: "error",
         message: "Internal server error",
-        error: err.message 
+        error: err.message,
       });
     }
   }
