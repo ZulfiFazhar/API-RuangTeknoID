@@ -32,9 +32,10 @@ class Post {
 
   static async findPostDetailById(postId) {
     const [results] = await db.promise().query(
-      `SELECT posts.*, users.name, users.email, GROUP_CONCAT(hashtags.name) AS hashtags
+      `SELECT posts.*, users.name, users.email, upr.profile_image_url, GROUP_CONCAT(hashtags.name) AS hashtags
               FROM posts
               JOIN users ON users.id = posts.userId
+              LEFT JOIN userprofiles upr ON users.id = upr.userId
               LEFT JOIN posthashtags USING(postId)
               LEFT JOIN hashtags USING(hashtagId)
               WHERE posts.postId = ?
@@ -110,12 +111,22 @@ class Post {
 
   // find all posts detailed for unauthenticated user
   static async findPostsDetailsUnauthenticated(userId) {
+    // Create user profile if not exists
+    await db
+    .promise()
+    .query(`INSERT INTO userprofiles (userId)
+            SELECT u.id
+            FROM users u
+            LEFT JOIN userprofiles up ON u.id = up.userId
+            WHERE up.userId IS NULL`);
+
     // Get all posts detailed
     const [articles] = await db.promise().query(
-      `SELECT posts.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+      `SELECT posts.*, u.name as author, upr.profile_image_url, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
           FROM posts
           left join userposts up using(postId)
           join users u on posts.userId = u.id
+          join userprofiles upr on u.id = upr.userId
           left join posthashtags ph using(postId)
           left join hashtags h using(hashtagId)
           left join comments c using(postId)
@@ -390,6 +401,15 @@ class Post {
       //   SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
       // `);
 
+      // Create user profile if not exists
+      await db
+      .promise()
+      .query(`INSERT INTO userprofiles (userId)
+              SELECT u.id
+              FROM users u
+              LEFT JOIN userprofiles up ON u.id = up.userId
+              WHERE up.userId IS NULL`);
+
       // Create userposts record if not exist
       await db.promise().query(
         `INSERT INTO userposts (userId, postId)
@@ -402,10 +422,11 @@ class Post {
 
       // Get all posts with detailed information
       const [articles] = await db.promise().query(
-        `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+        `SELECT posts.*, up.*, u.name as author, upr.profile_image_url, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
               FROM posts
               join userposts up using(postId)
               join users u on posts.userId = u.id
+              join userprofiles upr on u.id = upr.userId
               left join posthashtags ph using(postId)
               left join hashtags h using(hashtagId)
               left join comments c using(postId)

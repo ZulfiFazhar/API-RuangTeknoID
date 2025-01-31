@@ -114,6 +114,7 @@ class PostController {
             userId: postRes.userId,
             name: postRes.name,
             email: postRes.email,
+            profile_image_url: postRes.profile_image_url,
           },
           hashtags: hashtags,
         },
