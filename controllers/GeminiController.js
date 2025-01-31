@@ -62,7 +62,7 @@ class GeminiController {
         status: "success",
         message: "Answer generated successfully",
         data: {
-          response: result.response.text(),
+          answer: result.response.text(),
         },
       });
     } catch (error) {
