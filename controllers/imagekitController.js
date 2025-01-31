@@ -4,8 +4,6 @@ const uuid = require('uuid');
 
 class ImagekitController {  
     static async uploadImage(req, res) {
-        let responseData;
-
         if(req.file) {
             const strFile = req.file.buffer.toString('base64');
             const fileName = uuid.v4() + path.extname(req.file.originalname);
@@ -19,7 +17,6 @@ class ImagekitController {
             //     else console.log(result);
             // });
         
-            
             imagekit.upload({
                 file : strFile,
                 fileName : fileName
@@ -31,6 +28,11 @@ class ImagekitController {
                 });
             }).catch(error => {
                 console.log(error);
+            });
+        }else{
+            res.status(400).json({
+                status: "error",
+                message: "Image not found",
             });
         }
 

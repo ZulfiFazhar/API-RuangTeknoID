@@ -1,10 +1,11 @@
 const express = require("express");
 const ImagekitController = require("../controllers/imagekitController");
 const multer = require("multer");
-const upload = multer();
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = express.Router();
 
-router.post('/upload', upload.single('file'), ImagekitController.uploadImage);
+router.post('/upload', upload.single('image'), ImagekitController.uploadImage);
 
 module.exports = router;
