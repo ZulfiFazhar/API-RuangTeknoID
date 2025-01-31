@@ -35,10 +35,11 @@ class Comment {
     const [results] = await db
       .promise()
       .query(`
-        SELECT Comments.*, Users.name
+        SELECT Comments.*, Users.name, upr.profile_image_url
         FROM Comments 
         JOIN Posts USING(postId) 
         JOIN Users ON Comments.userId = Users.id
+        LEFT JOIN UserProfiles upr ON Comments.userId = upr.userId
         WHERE replyTo IS NULL AND Comments.postId = ?`,
         [postId]
       );
@@ -49,9 +50,10 @@ class Comment {
     const [results] = await db
       .promise()
       .query(`
-        SELECT Comments.*, Users.name
+        SELECT Comments.*, Users.name, upr.profile_image_url
         FROM Comments
         JOIN Users ON Comments.userId = Users.id
+        LEFT JOIN UserProfiles upr ON Comments.userId = upr.userId
         WHERE replyTo = ?`,
         [commentId]
       );
