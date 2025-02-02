@@ -12,8 +12,10 @@ const unsplashRoutes = require("./routes/unsplashRoutes");
 const imageKitRoutes = require("./routes/imageKitRoutes");
 require("dotenv").config();
 
+const myFE = process.env.FE_HOST;
+
 const corsOptions = {
-  origin: process.env.FE_HOST, // Ganti dengan URL frontend Anda
+  origin: myFE,
   optionsSuccessStatus: 200,
 };
 
@@ -43,3 +45,5 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
+console.log("My FE Host = ", myFE);
