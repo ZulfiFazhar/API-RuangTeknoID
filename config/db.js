@@ -5,19 +5,23 @@ const dotenv = require("dotenv");
 const envFile = process.env.NODE_ENV === "development" ? ".env.local" : ".env";
 dotenv.config({ path: envFile });
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-db.connect((err) => {
+db.getConnection((err, connection) => {
   if (err) {
     console.error("Database connection failed:", err.message);
   } else {
     console.log("Connected to the database.");
+    connection.release();
   }
 });
 
@@ -35,7 +39,7 @@ const createDatabase = () => {
         otp_code VARCHAR(6) DEFAULT NULL,
         is_verified BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
+      );`,
     ],
     [
       "Posts",
@@ -50,7 +54,7 @@ const createDatabase = () => {
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
-      )`,
+      );`,
     ],
     [
       "Hashtags",
@@ -124,6 +128,7 @@ const createDatabase = () => {
         PRIMARY KEY (discussionId, userId),
         userVote TINYINT DEFAULT 0,
         userViews INT DEFAULT 0,
+        isBot TINYINT DEFAULT 0,
         FOREIGN KEY (discussionId) REFERENCES Discussions(discussionId) ON DELETE CASCADE,
         FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
       );`,
@@ -175,6 +180,6 @@ const createDatabase = () => {
   });
 };
 
-createDatabase();
+// createDatabase();
 
 module.exports = db;

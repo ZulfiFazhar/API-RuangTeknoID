@@ -26,29 +26,30 @@ class Post {
   static async findPostById(postId) {
     const [results] = await db
       .promise()
-      .query("SELECT * FROM posts WHERE postId = ?", [postId]);
+      .query("SELECT * FROM Posts WHERE postId = ?", [postId]);
     return results.length > 0 ? results[0] : null;
   }
 
   static async findPostDetailById(postId) {
     const [results] = await db.promise().query(
-      `SELECT posts.*, users.name, users.email, GROUP_CONCAT(hashtags.name) AS hashtags
-              FROM posts
-              JOIN users ON users.id = posts.userId
-              LEFT JOIN posthashtags USING(postId)
-              LEFT JOIN hashtags USING(hashtagId)
-              WHERE posts.postId = ?
-              GROUP BY posts.postId`,
+      `SELECT Posts.*, Users.name, Users.email, upr.profile_image_url, GROUP_CONCAT(Hashtags.name) AS hashtags
+              FROM Posts
+              JOIN Users ON Users.id = Posts.userId
+              LEFT JOIN UserProfiles upr ON Users.id = upr.userId
+              LEFT JOIN PostHashtags USING(postId)
+              LEFT JOIN Hashtags USING(hashtagId)
+              WHERE Posts.postId = ?
+              GROUP BY Posts.postId`,
       [postId]
     );
     return results.length > 0 ? results[0] : null;
   }
 
-  // find userposts record of a post by postId & userId
+  // find UserPosts record of a post by postId & userId
   static async findUPById(userId, postId) {
-    // Create userposts record if not exist
+    // Create UserPosts record if not exist
     await db.promise().query(
-      `INSERT IGNORE INTO userposts (userId, postId)
+      `INSERT IGNORE INTO UserPosts (userId, postId)
             VALUES (?, ?);`,
       [userId, postId]
     );
@@ -56,7 +57,7 @@ class Post {
     // Get userpost record
     const [results] = await db.promise().query(
       `SELECT * 
-            FROM userposts up
+            FROM UserPosts up
             WHERE up.userId = ? AND up.postId = ?`,
       [userId, postId]
     );
@@ -65,12 +66,12 @@ class Post {
 
   static async findPostWithHashtagsById(postId) {
     const [results] = await db.promise().query(
-      `SELECT posts.*, GROUP_CONCAT(hashtags.hashtagId) AS hashtags
-              FROM posts
-              LEFT JOIN posthashtags USING(postId)
-              LEFT JOIN hashtags USING(hashtagId)
-              WHERE posts.postId = ?
-              GROUP BY posts.postId`,
+      `SELECT Posts.*, GROUP_CONCAT(Hashtags.hashtagId) AS hashtags
+              FROM Posts
+              LEFT JOIN PostHashtags USING(postId)
+              LEFT JOIN Hashtags USING(hashtagId)
+              WHERE Posts.postId = ?
+              GROUP BY Posts.postId`,
       [postId]
     );
     return results.length > 0 ? results[0] : null;
@@ -80,46 +81,54 @@ class Post {
     const [results] = await db
       .promise()
       .query(
-        "SELECT postId, p.title, p.image_cover, u.name as author, p.content, p.votes, p.createdAt, GROUP_CONCAT(hashtags.name) AS hashtags FROM posts p JOIN users u on u.id = p.userId LEFT JOIN posthashtags USING(postId) LEFT JOIN hashtags USING(hashtagId) GROUP BY postId;"
+        "SELECT postId, p.title, p.image_cover, u.name as author, p.content, p.votes, p.createdAt, GROUP_CONCAT(Hashtags.name) AS hashtags FROM Posts p JOIN Users u on u.id = p.userId LEFT JOIN PostHashtags USING(postId) LEFT JOIN Hashtags USING(hashtagId) GROUP BY postId;"
       );
     return results;
   }
 
-  // find all posts with userpost records detail
+  // find all Posts with userpost records detail
   static async findAllPostsUPDetails(userId) {
-    // Create userposts record if not exist
+    // Create UserPosts record if not exist
     await db.promise().query(
-      `INSERT INTO userposts (userId, postId)
+      `INSERT INTO UserPosts (userId, postId)
             SELECT ?, p.postId
-            FROM posts p
-            LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
+            FROM Posts p
+            LEFT JOIN UserPosts up ON p.postId = up.postId AND up.userId = ?
             WHERE up.postId IS NULL;`,
       [userId, userId]
     );
 
-    // Get all posts with userposts records
+    // Get all Posts with UserPosts records
     const [results] = await db.promise().query(
-      `SELECT posts.*, up.* 
-            FROM posts
-            join userposts up using(postId)
+      `SELECT Posts.*, up.* 
+            FROM Posts
+            join UserPosts up using(postId)
             where up.userId = ?`,
       [userId]
     );
     return results;
   }
 
-  // find all posts detailed for unauthenticated user
+  // find all Posts detailed for unauthenticated user
   static async findPostsDetailsUnauthenticated(userId) {
-    // Get all posts detailed
+    // Create user profile if not exists
+    await db.promise().query(`INSERT INTO UserProfiles (userId)
+            SELECT u.id
+            FROM Users u
+            LEFT JOIN UserProfiles up ON u.id = up.userId
+            WHERE up.userId IS NULL`);
+
+    // Get all Posts detailed
     const [articles] = await db.promise().query(
-      `SELECT posts.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
-          FROM posts
-          left join userposts up using(postId)
-          join users u on posts.userId = u.id
-          left join posthashtags ph using(postId)
-          left join hashtags h using(hashtagId)
-          left join comments c using(postId)
-          group by posts.postId`,
+      `SELECT Posts.*, u.name as author, upr.profile_image_url, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+          FROM Posts
+          left join UserPosts up using(postId)
+          join Users u on Posts.userId = u.id
+          join UserProfiles upr on u.id = upr.userId
+          left join PostHashtags ph using(postId)
+          left join Hashtags h using(hashtagId)
+          left join Comments c using(postId)
+          group by Posts.postId`,
       [userId]
     );
 
@@ -128,19 +137,19 @@ class Post {
     return articles;
   }
 
-  // find all bookmarked posts with userpost records detail
+  // find all bookmarked Posts with userpost records detail
   static async findAllBookmarkedPostsUPDetails(userId) {
-    // Get all posts with userposts records
+    // Get all Posts with UserPosts records
     const [results] = await db.promise().query(
-      `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
-              FROM posts
-              join userposts up using(postId)
-              join users u on posts.userId = u.id
-              left join posthashtags ph using(postId)
-              left join hashtags h using(hashtagId)
-              left join comments c using(postId)
+      `SELECT Posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+              FROM Posts
+              join UserPosts up using(postId)
+              join Users u on Posts.userId = u.id
+              left join PostHashtags ph using(postId)
+              left join Hashtags h using(hashtagId)
+              left join Comments c using(postId)
               where up.userId = ? and up.isBookmarked = TRUE
-              group by posts.postId`,
+              group by Posts.postId`,
       [userId]
     );
     return results;
@@ -162,7 +171,7 @@ class Post {
     const [result] = await db
       .promise()
       .query(
-        "UPDATE users SET name = ?, email = ?, password = ?, otp_code = ?, is_verified = ? WHERE id = ?",
+        "UPDATE Users SET name = ?, email = ?, password = ?, otp_code = ?, is_verified = ? WHERE id = ?",
         [name, email, password, otpCode, isVerified, id]
       );
     return result.affectedRows > 0;
@@ -195,7 +204,7 @@ class Post {
     // Get the current uservote value
     const [currentUserVote] = await db.promise().query(
       `SELECT userVote 
-              FROM userposts 
+              FROM UserPosts 
               WHERE postId = ? AND userId = ?`,
       [postId, userId]
     );
@@ -204,11 +213,11 @@ class Post {
       return null;
     }
 
-    // Update the votes count in the userposts table
-    const [userpostsResult] = await db
+    // Update the votes count in the UserPosts table
+    const [UserPostsResult] = await db
       .promise()
       .query(
-        "UPDATE userposts SET userVote = ? WHERE postId = ? AND userId = ?",
+        "UPDATE UserPosts SET userVote = ? WHERE postId = ? AND userId = ?",
         [vote, postId, userId]
       );
 
@@ -229,9 +238,9 @@ class Post {
       .promise()
       .query("UPDATE Posts SET views = views + 1 WHERE PostId = ?", [postId]);
 
-    // Update the views count in the userposts table
+    // Update the views count in the UserPosts table
     if (userId) {
-      const [userpostsResult] = await db
+      const [UserPostsResult] = await db
         .promise()
         .query(
           "UPDATE UserPosts SET userViews = userViews + 1 WHERE postId = ? and userId = ?",
@@ -265,7 +274,7 @@ class Post {
   }
 
   static async updateHashtags(postId, hashtagIds) {
-    // Delete all existing hashtags for the post
+    // Delete all existing Hashtags for the post
     await db
       .promise()
       .query("DELETE FROM PostHashtags WHERE postId = ?", [postId]);
@@ -275,7 +284,7 @@ class Post {
       hashtagId,
     ]);
 
-    // Add new hashtags if hashtagIds is not empty
+    // Add new Hashtags if hashtagIds is not empty
     if (hashtagIds.length <= 0) {
       return null;
     }
@@ -290,7 +299,7 @@ class Post {
   }
 
   static async toggleBookmarkPost(userId, postId) {
-    // Find userposts record to check if already exist
+    // Find UserPosts record to check if already exist
     const [upExist] = await db
       .promise()
       .query("SELECT * FROM UserPosts WHERE userId = ? AND postId = ?", [
@@ -322,26 +331,26 @@ class Post {
   static async authSearchByKeyword(userId, keyword) {
     const searchKeyword = `%${keyword}%`;
 
-    // Create userposts record if not exist
+    // Create UserPosts record if not exist
     await db.promise().query(
-      `INSERT INTO userposts (userId, postId)
+      `INSERT INTO UserPosts (userId, postId)
             SELECT ?, p.postId
-            FROM posts p
-            LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
+            FROM Posts p
+            LEFT JOIN UserPosts up ON p.postId = up.postId AND up.userId = ?
             WHERE up.postId IS NULL;`,
       [userId, userId]
     );
 
     const [results] = await db.promise().query(
-      `SELECT posts.postId, posts.title, posts.image_cover, posts.content, posts.views, posts.votes, posts.userId, posts.createdAt, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
-      FROM posts
-      JOIN userposts up USING(postId) 
-      JOIN users u ON posts.userId = u.id 
-      LEFT JOIN posthashtags ph USING(postId) 
-      LEFT JOIN hashtags h USING(hashtagId) 
-      LEFT JOIN comments c USING(postId)
-      WHERE up.userId = ? AND (posts.title LIKE ? OR posts.content LIKE ?)
-      GROUP BY posts.postId, posts.title, posts.content, posts.userId, posts.createdAt, up.userId, up.postId, u.name`,
+      `SELECT Posts.postId, Posts.title, Posts.image_cover, Posts.content, Posts.views, Posts.votes, Posts.userId, Posts.createdAt, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+      FROM Posts
+      JOIN UserPosts up USING(postId) 
+      JOIN Users u ON Posts.userId = u.id 
+      LEFT JOIN PostHashtags ph USING(postId) 
+      LEFT JOIN Hashtags h USING(hashtagId) 
+      LEFT JOIN Comments c USING(postId)
+      WHERE up.userId = ? AND (Posts.title LIKE ? OR Posts.content LIKE ?)
+      GROUP BY Posts.postId, Posts.title, Posts.content, Posts.userId, Posts.createdAt, up.userId, up.postId, u.name`,
       [userId, searchKeyword, searchKeyword]
     );
     return results;
@@ -351,15 +360,15 @@ class Post {
     const searchKeyword = `%${keyword}%`;
 
     const [results] = await db.promise().query(
-      `SELECT posts.postId, posts.title, posts.image_cover, posts.content, posts.views, posts.votes, posts.userId, posts.createdAt, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
-      FROM posts
-      JOIN userposts up USING(postId) 
-      JOIN users u ON posts.userId = u.id 
-      LEFT JOIN posthashtags ph USING(postId) 
-      LEFT JOIN hashtags h USING(hashtagId) 
-      LEFT JOIN comments c USING(postId)
-      WHERE (posts.title LIKE ? OR posts.content LIKE ?)
-      GROUP BY posts.postId, posts.title, posts.content, posts.userId, posts.createdAt, up.userId, up.postId, u.name`,
+      `SELECT Posts.postId, Posts.title, Posts.image_cover, Posts.content, Posts.views, Posts.votes, Posts.userId, Posts.createdAt, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+      FROM Posts
+      JOIN UserPosts up USING(postId) 
+      JOIN Users u ON Posts.userId = u.id 
+      LEFT JOIN PostHashtags ph USING(postId) 
+      LEFT JOIN Hashtags h USING(hashtagId) 
+      LEFT JOIN Comments c USING(postId)
+      WHERE (Posts.title LIKE ? OR Posts.content LIKE ?)
+      GROUP BY Posts.postId, Posts.title, Posts.content, Posts.userId, Posts.createdAt, up.userId, up.postId, u.name`,
       [searchKeyword, searchKeyword]
     );
     return results;
@@ -387,30 +396,38 @@ class Post {
 
       // Step 2: Ambil semua artikel dari database
       //   const [articles] = await db.promise().query(`
-      //   SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN users u ON p.userId = u.id
+      //   SELECT p.postId, p.title, u.name as author, p.content, p.votes, p.createdAt FROM Posts p INNER JOIN Users u ON p.userId = u.id
       // `);
 
-      // Create userposts record if not exist
+      // Create user profile if not exists
+      await db.promise().query(`INSERT INTO UserProfiles (userId)
+              SELECT u.id
+              FROM Users u
+              LEFT JOIN UserProfiles up ON u.id = up.userId
+              WHERE up.userId IS NULL`);
+
+      // Create UserPosts record if not exist
       await db.promise().query(
-        `INSERT INTO userposts (userId, postId)
+        `INSERT INTO UserPosts (userId, postId)
               SELECT ?, p.postId
-              FROM posts p
-              LEFT JOIN userposts up ON p.postId = up.postId AND up.userId = ?
+              FROM Posts p
+              LEFT JOIN UserPosts up ON p.postId = up.postId AND up.userId = ?
               WHERE up.postId IS NULL;`,
         [userId, userId]
       );
 
-      // Get all posts with detailed information
+      // Get all Posts with detailed information
       const [articles] = await db.promise().query(
-        `SELECT posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
-              FROM posts
-              join userposts up using(postId)
-              join users u on posts.userId = u.id
-              left join posthashtags ph using(postId)
-              left join hashtags h using(hashtagId)
-              left join comments c using(postId)
+        `SELECT Posts.*, up.*, u.name as author, upr.profile_image_url, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+              FROM Posts
+              join UserPosts up using(postId)
+              join Users u on Posts.userId = u.id
+              join UserProfiles upr on u.id = upr.userId
+              left join PostHashtags ph using(postId)
+              left join Hashtags h using(hashtagId)
+              left join Comments c using(postId)
               where up.userId = ?
-              group by posts.postId`,
+              group by Posts.postId`,
         [userId]
       );
 
