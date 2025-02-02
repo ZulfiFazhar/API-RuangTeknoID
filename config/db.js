@@ -116,6 +116,7 @@ const createDatabase = () => {
         votes INT DEFAULT 0,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        isBot TINYINT DEFAULT 0,
         FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE,
         FOREIGN KEY (answerTo) REFERENCES Discussions(discussionId) ON DELETE CASCADE
       );`,
