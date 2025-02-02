@@ -7,7 +7,7 @@ const authMiddleware = (req, res, next) => {
   if (!token) {
     return res.status(401).json({ error: "Access denied, no token provided" });
   }
-  
+
   try {
     // Jika aktif token sudah kadaluwarsa, jwt.verify akan otomatis melempar error (tidak perlu cek manual di db)
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -29,14 +29,14 @@ const authMiddleware = (req, res, next) => {
 
       // Buat token akses baru
       const newAccessToken = jwt.sign(
-        { userId: user.userId, name: user.name,  email: user.email },
+        { userId: user.userId, name: user.name, email: user.email },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
 
       // Perbarui token aktif di database
       db.query(
-        "UPDATE users SET active_token = ? WHERE id = ?",
+        "UPDATE Users SET active_token = ? WHERE id = ?",
         [newAccessToken, user.userId],
         (err) => {
           if (err) {

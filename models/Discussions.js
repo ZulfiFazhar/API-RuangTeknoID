@@ -58,7 +58,7 @@ class Discussion {
       `SELECT Discussions.*, Users.name as authorName
               FROM Discussions 
               JOIN Users ON Discussions.userId = Users.id
-              WHERE discussions.discussionId = ?`,
+              WHERE Discussions.discussionId = ?`,
       [discussionId]
     );
 
@@ -84,7 +84,7 @@ class Discussion {
               JOIN Users ON Discussions.userId = Users.id
               LEFT JOIN DiscussionHashtags DH using(discussionId)
               LEFT JOIN Hashtags using(hashtagId)
-              WHERE discussions.discussionId = ? and UD.userId = ?`,
+              WHERE Discussions.discussionId = ? and UD.userId = ?`,
       [discussionId, userId]
     );
 
@@ -203,7 +203,7 @@ class Discussion {
     } else {
       // Return new answer data
       const [newAnswer] = await db.promise().query(
-        `SELECT Discussions.*, Users.id as authorId, Users.name as author_name, UserDiscussions.userId as user_discussionId,        UserDiscussions.userVote as user_vote, UserDiscussions.userViews as user_views 
+        `SELECT Discussions.*, Users.id as authorId, Users.name as author_name, UserDiscussions.userId as user_discussionId, UserDiscussions.userVote as user_vote, UserDiscussions.userViews as user_views 
                 FROM Discussions 
                 JOIN Users ON Discussions.userId = Users.id 
                 JOIN UserDiscussions USING(discussionId)
