@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install PM2
+        run: npm install -g pm2
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -38,6 +41,5 @@ jobs:
           script: |
             cd ~/ruangteknoid/RuangTeknoID-API/
             git pull
-            npm install -g pm2
             pm2 restart 0
             sudo systemctl restart nginx
