@@ -18,9 +18,30 @@ const generationConfig = {
 
 class GeminiController {
   static async generateText(req, res) {
+    const chatSession = model.startChat({
+      generationConfig,
+      history: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: "Anda adalah AI yang akan membantu masyarakat Indonesia tentang segala hal terkait Teknologi. Tugas anda adalah hanya menjawab pertanyaan seputar Teknologi saja dalam bahasa Indonesia dan tidak bisa menjawab pertanyaan diluar topik Teknologi.",
+            },
+          ],
+        },
+        {
+          role: "model",
+          parts: [
+            {
+              text: "Baik, saya mengerti. Saya siap membantu masyarakat Indonesia dengan menjawab pertanyaan seputar teknologi dalam bahasa Indonesia. Silakan ajukan pertanyaan Anda! Saya akan berusaha memberikan jawaban yang jelas dan informatif.\n",
+            },
+          ],
+        },
+      ],
+    });
     try {
       const { prompt } = req.body;
-      const result = await model.generateContent(prompt);
+      const result = await chatSession.sendMessage(prompt);
       res.status(200).json({
         status: "success",
         message: "Text generated successfully",
