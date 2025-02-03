@@ -35,7 +35,6 @@ jobs:
           script: |
             cd ~/ruangteknoid/RuangTeknoID-API/
             git pull
-            npm install -g pm2
             npm install
-            pm2 restart 0
+            pm2 restart index
             sudo systemctl restart nginx
