@@ -38,7 +38,7 @@ app.use("/unsplash", unsplashRoutes);
 app.use("/imagekit", imageKitRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to the Ruang Tekno ID API");
+  res.send("Welcome to the Ruang Tekno ID API using CI CD");
 });
 
 // Start Server
