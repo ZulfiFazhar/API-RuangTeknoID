@@ -101,8 +101,13 @@ class DiscussionController {
         author: {
           userId: discussionRes.userId,
           name: discussionRes.authorName,
+          profile_image_url: discussionRes.profile_image_url,
         },
       };
+
+      if (discussionRes.hashtags_name) {
+        discussion.hashtags = discussionRes.hashtags_name.split(",");
+      }
 
       res.status(200).json({
         status: "success",
@@ -156,6 +161,7 @@ class DiscussionController {
         author: {
           userId: discussionRes.authorId,
           name: discussionRes.authorName,
+          profile_image_url: discussionRes.profile_image_url,
         },
       };
 
