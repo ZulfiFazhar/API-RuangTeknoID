@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Deploying to VPS
         uses: appleboy/ssh-action@master
         with:
@@ -35,5 +38,6 @@ jobs:
           script: |
             cd ~/ruangteknoid/RuangTeknoID-API/
             git pull
+            npm install -g pm2
             pm2 restart 0
             sudo systemctl restart nginx
