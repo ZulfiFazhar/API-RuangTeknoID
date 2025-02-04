@@ -26,6 +26,11 @@ router.get(
   DiscussionController.getQuestionsWithUD
 );
 router.get(
+  "/get-questions-ud-bookmarked",
+  authMiddleware,
+  DiscussionController.getQuestionsWithUDBookmarked
+);
+router.get(
   "/get-answers/:discussionId",
   DiscussionController.getAnswersByDiscussionId
 );
@@ -59,6 +64,11 @@ router.put("/votes/:discussionId", authMiddleware, DiscussionController.votes);
 router.put(
   "/increment-views/:discussionId",
   DiscussionController.incrementViews
+);
+router.post(
+  "/toggle-bookmark/:discussionId",
+  authMiddleware,
+  DiscussionController.toggleBookmark
 );
 router.delete(
   "/delete/:discussionId",

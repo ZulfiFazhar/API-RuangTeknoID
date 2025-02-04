@@ -159,6 +159,7 @@ class DiscussionController {
           userId: discussionRes.userId,
           discussionId: discussionRes.discussionId,
           userVote: discussionRes.userVote,
+          isBookmarked: discussionRes.isBookmarked,
         },
         author: {
           userId: discussionRes.authorId,
@@ -215,8 +216,32 @@ class DiscussionController {
         });
       }
 
-      // Get the numbers of answers for each question
-      console.log(questions)
+      res.status(200).json({
+        status: "success",
+        message: "All questions fetched successfully",
+        data: questions,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async getQuestionsWithUDBookmarked(req, res) {
+    const { userId } = req.user;
+
+    try {
+      const questions = await Discussion.findAllQuestionsWithUDBookmarked(userId);
+      if (!questions) {
+        return res.status(404).json({
+          status: "error",
+          message: "Invalid request",
+          error: "Invalid request",
+        });
+      }
 
       res.status(200).json({
         status: "success",
@@ -225,6 +250,25 @@ class DiscussionController {
       });
     } catch (err) {
       res.status(500).json({
+        status: "error",
+        message: "Internal server error",
+        error: err.message,
+      });
+    }
+  }
+
+  static async toggleBookmark(req, res) {
+    const {userId} = req.user;
+    const {discussionId} = req.params;
+
+    try {
+      await Discussion.toggleBookmark(userId, discussionId);
+      res.status(200).json({
+        status: "success",
+        message: "Discussion bookmark toggled successfully",
+      });
+    } catch (error) {
+      return res.status(500).json({
         status: "error",
         message: "Internal server error",
         error: err.message,
@@ -272,6 +316,7 @@ class DiscussionController {
           author: {
             userId: res.authorId,
             name: res.author_name,
+            profile_image_url: res.profile_image_url,
           },
         };
       });
@@ -312,6 +357,7 @@ class DiscussionController {
           author: {
             userId: res.authorId,
             name: res.author_name,
+            profile_image_url: res.profile_image_url,
           },
           userDiscussion: {
             userId: res.user_discussionId,

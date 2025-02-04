@@ -169,6 +169,60 @@ class Discussion {
     return results;
   }
 
+  // Find all questions with it user discussion record
+  static async findAllQuestionsWithUDBookmarked(userId) {
+    // Create UD records for all questions for the logged in user
+    const [res] = await db.promise().query(
+      `INSERT INTO UserDiscussions (userId, discussionId)
+       SELECT ?, d.discussionId
+       FROM Discussions d
+       LEFT JOIN UserDiscussions ud ON d.discussionId = ud.discussionId AND ud.userId = ?
+       WHERE ud.discussionId IS NULL AND d.answerTo IS NULL`,
+      [userId, userId]
+    );
+
+    const [results] = await db.promise().query(
+      `SELECT 
+            Discussions.*, UserDiscussions.*, Users.name AS author_name,
+            UserProfiles.profile_image_url,
+            GROUP_CONCAT(DISTINCT Hashtags.name) AS hashtags_name,
+            COUNT(DISTINCT Answers.discussionId) AS answer_count
+        FROM 
+            Discussions
+        JOIN 
+            UserDiscussions ON Discussions.discussionId = UserDiscussions.discussionId
+        JOIN 
+            Users ON Discussions.userId = Users.id
+        JOIN 
+            UserProfiles ON Users.id = UserProfiles.userId
+        LEFT JOIN 
+            DiscussionHashtags ON Discussions.discussionId = DiscussionHashtags.discussionId
+        LEFT JOIN 
+            Hashtags ON DiscussionHashtags.hashtagId = Hashtags.hashtagId
+        LEFT JOIN 
+            Discussions AS Answers ON Answers.answerTo = Discussions.discussionId
+        WHERE 
+            Discussions.answerTo IS NULL 
+            AND UserDiscussions.userId = ?
+            AND UserDiscussions.isBookmarked = 1
+        GROUP BY 
+            Discussions.discussionId;`,
+      [userId]
+    );
+
+    return results;
+  }
+
+  static async toggleBookmark(userId, discussionId) {
+    const [result] = await db
+      .promise()
+      .query(
+        "UPDATE UserDiscussions SET isBookmarked = NOT isBookmarked WHERE userId = ? AND discussionId = ?",
+        [userId, discussionId]
+      );
+    return result.affectedRows > 0;
+  }
+
   static async countNumberOfAnswers(discussionIds) {
     const values = discussionIds.map((id) => "?").join(",");
     const [results] = await db.promise().query(
@@ -191,9 +245,10 @@ class Discussion {
   static async findAnswersWithItUser(discussionId) {
     const [results] = await db.promise().query(
       `
-        SELECT Discussions.*, Users.name as author_name, Users.id as authorId 
+        SELECT Discussions.*, Users.name as author_name, Users.id as authorId, UserProfiles.profile_image_url
         FROM Discussions 
         JOIN Users ON Discussions.userId = Users.id 
+        JOIN UserProfiles ON Users.id = UserProfiles.userId
         WHERE Discussions.answerTo = ?
       `,
       [discussionId]
@@ -215,9 +270,10 @@ class Discussion {
 
     const [results] = await db.promise().query(
       `
-        SELECT Discussions.*, Users.id as authorId, Users.name as author_name, UserDiscussions.userId as user_discussionId, UserDiscussions.userVote as user_vote, UserDiscussions.userViews as user_views 
+        SELECT Discussions.*, Users.id as authorId, Users.name as author_name, UserDiscussions.userId as user_discussionId, UserDiscussions.userVote as user_vote, UserDiscussions.userViews as user_views, UserProfiles.profile_image_url
         FROM Discussions 
         JOIN Users ON Discussions.userId = Users.id 
+        JOIN UserProfiles ON Users.id = UserProfiles.userId
         JOIN UserDiscussions USING(discussionId)
         WHERE Discussions.answerTo = ? and UserDiscussions.userId = ?`,
       [discussionId, userId]
