@@ -16,6 +16,7 @@ router.post("/refresh-token", UserController.refreshToken);
 router.post("/logout", UserController.logout);
 router.get("/users", authMiddleware, UserController.getAllUsers);
 router.get("/users/profile", authMiddleware, UserController.getUserById);
+router.get("/users/profiles/:userId", UserController.getUserProfiles);
 router.get("/users/get-details", authMiddleware, UserController.getDetailedUser);
 router.get("/users/:userId", UserController.getOtherUserById);
 router.put("/users/:id", authMiddleware, UserController.updateUser);
