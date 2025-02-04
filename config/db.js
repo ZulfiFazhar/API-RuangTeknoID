@@ -130,6 +130,7 @@ const createDatabase = () => {
         userVote TINYINT DEFAULT 0,
         userViews INT DEFAULT 0,
         isBot TINYINT DEFAULT 0,
+        isBookmarked BOOLEAN DEFAULT FALSE,
         FOREIGN KEY (discussionId) REFERENCES Discussions(discussionId) ON DELETE CASCADE,
         FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
       );`,

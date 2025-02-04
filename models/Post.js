@@ -141,10 +141,11 @@ class Post {
   static async findAllBookmarkedPostsUPDetails(userId) {
     // Get all Posts with UserPosts records
     const [results] = await db.promise().query(
-      `SELECT Posts.*, up.*, u.name as author, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
+      `SELECT Posts.*, up.*, u.name as author, upr.profile_image_url, count(c.commentId) as commentsCount, GROUP_CONCAT(distinct h.name) as hashtags
               FROM Posts
               join UserPosts up using(postId)
               join Users u on Posts.userId = u.id
+              join UserProfiles upr on u.id = upr.userId
               left join PostHashtags ph using(postId)
               left join Hashtags h using(hashtagId)
               left join Comments c using(postId)
