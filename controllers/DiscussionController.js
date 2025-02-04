@@ -95,6 +95,7 @@ class DiscussionController {
           content: discussionRes.content,
           views: discussionRes.views,
           votes: discussionRes.votes,
+          answer_count: discussionRes.answer_count,
           createdAt: discussionRes.createdAt,
           updatedAt: discussionRes.updatedAt,
         },
@@ -149,6 +150,7 @@ class DiscussionController {
           content: discussionRes.content,
           views: discussionRes.views,
           votes: discussionRes.votes,
+          answer_count: discussionRes.answer_count,
           createdAt: discussionRes.createdAt,
           updatedAt: discussionRes.updatedAt,
         },
@@ -212,6 +214,9 @@ class DiscussionController {
           error: "Invalid request",
         });
       }
+
+      // Get the numbers of answers for each question
+      console.log(questions)
 
       res.status(200).json({
         status: "success",

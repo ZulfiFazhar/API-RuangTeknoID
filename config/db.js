@@ -34,8 +34,8 @@ const createDatabase = () => {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
-        active_token VARCHAR(255) DEFAULT NULL,
-        refresh_token VARCHAR(255) DEFAULT NULL,
+        active_token TEXT DEFAULT NULL,
+        refresh_token TEXT DEFAULT NULL,
         otp_code VARCHAR(6) DEFAULT NULL,
         is_verified BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
