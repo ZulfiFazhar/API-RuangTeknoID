@@ -451,16 +451,16 @@ class Post {
       });
 
       // Step 4: Filter artikel dengan skor 0
-      const filteredArticles = articleScores.filter(
-        (article) => article.score > 0
-      );
+      // const filteredArticles = articleScores.filter(
+      //   (article) => article.score > 0
+      // );
 
       // Step 5: Urutkan artikel berdasarkan skor TF-IDF
-      filteredArticles.sort((a, b) => b.score - a.score);
+      articleScores.sort((a, b) => b.score - a.score);
 
       // Step 6: Ambil artikel terbaik (Top 10)
       // return filteredArticles.slice(0, 10);
-      return filteredArticles;
+      return articleScores;
     } catch (error) {
       console.error("Error in recommendArticlesByUserLog:", error);
       throw new Error("Failed to fetch recommended articles");
