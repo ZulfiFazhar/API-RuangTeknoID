@@ -13,7 +13,10 @@ class User {
   static async findByEmail(email) {
     const [results] = await db
       .promise()
-      .query("SELECT * FROM Users WHERE email = ?", [email]);
+      .query(`SELECT Users.* 
+              FROM Users
+              WHERE email = ?`, [email]);
+
     return results.length > 0 ? results[0] : null;
   }
 
@@ -60,7 +63,20 @@ class User {
     return results.length > 0 ? results[0] : null;
   }
 
+  static async findUserProfiles(userId) {
+    const [results] = await db
+      .promise()
+      .query(
+        `SELECT UserProfiles.*
+          FROM UserProfiles
+          WHERE userId = ?`,
+        [userId]
+      );
+    return results.length > 0 ? results[0] : null;
+  }
+
   static async create(user) {
+    console.log("tes")
     const { name, email, password, otpCode, isVerified } = user;
     const [result] = await db
       .promise()
@@ -68,6 +84,18 @@ class User {
         "INSERT INTO Users (name, email, password, otp_code, is_verified) VALUES (?, ?, ?, ?, ?)",
         [name, email, password, otpCode, isVerified]
       );
+
+
+    // Insert blank / default user profile record
+    await db
+      .promise()
+      .query(
+        "INSERT INTO UserProfiles (userId) VALUES (?)",
+        result.insertId
+      );
+
+      console.log("tes")
+
     return result.insertId;
   }
 

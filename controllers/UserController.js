@@ -14,12 +14,14 @@ class UserController {
     }
 
     try {
-      const existingUser = await User.findByEmail(email);
+      const existingUser = await User.findByEmail(email);      
       if (existingUser) {
         return res
           .status(400)
           .json({ error: "Email is already registered. Please log in." });
       }
+
+      console.log("tes")
 
       const hashedPassword = bcrypt.hashSync(password, 10);
       const otp = Math.floor(100000 + Math.random() * 900000);
@@ -141,13 +143,15 @@ class UserController {
 
       await User.updateTokens(user.id, accessToken, refreshToken);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: "success",
         message: "Login successful",
         data: { accessToken, refreshToken },
       });
     } catch (err) {
-      res.status(500).json({
+      console.log(err)
+
+      return res.status(500).json({
         status: "error",
         message: "Internal Server Error",
         error: err.message,
@@ -168,6 +172,32 @@ class UserController {
         error: err.message,
       });
     }
+  }
+
+  static async getUserProfiles(req, res) {
+    const { userId } = req.params;
+
+    try {
+      const user = await User.findUserProfiles(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: "error",
+          message: "User not found",
+        });
+      }
+      res.status(200).json({
+        status: "success",
+        message: "User retrieved successfully",
+        data: user,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+        error: err.message,
+      });
+    }
+
   }
 
   // Metode Validasi Login
