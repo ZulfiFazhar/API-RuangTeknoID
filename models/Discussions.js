@@ -55,10 +55,14 @@ class Discussion {
   // Find discusson with it author record
   static async findDiscussionAuthor(discussionId) {
     const [results] = await db.promise().query(
-      `SELECT Discussions.*, Users.name as authorName
+      `SELECT Discussions.*, Users.name as authorName, UserProfiles.profile_image_url, group_concat(Distinct Hashtags.name) as hashtags_name
               FROM Discussions 
               JOIN Users ON Discussions.userId = Users.id
-              WHERE Discussions.discussionId = ?`,
+              JOIN UserProfiles ON Users.id = UserProfiles.userId
+              LEFT JOIN DiscussionHashtags DH using(discussionId)
+              LEFT JOIN Hashtags using(hashtagId)
+              WHERE Discussions.discussionId = ?
+              GROUP BY Discussions.discussionId`,
       [discussionId]
     );
 
@@ -78,16 +82,17 @@ class Discussion {
     );
 
     const [results] = await db.promise().query(
-      `SELECT Discussions.*, UD.*, group_concat(Hashtags.name) as hashtags_name, Users.id as authorId, Users.name as authorName
+      `SELECT Discussions.*, UD.*, UserProfiles.profile_image_url, group_concat(Hashtags.name) as hashtags_name, Users.id as authorId, Users.name as authorName
               FROM Discussions 
               JOIN UserDiscussions UD using(discussionId)
               JOIN Users ON Discussions.userId = Users.id
+              JOIN UserProfiles ON Users.id = UserProfiles.userId
               LEFT JOIN DiscussionHashtags DH using(discussionId)
               LEFT JOIN Hashtags using(hashtagId)
               WHERE Discussions.discussionId = ? and UD.userId = ?`,
       [discussionId, userId]
     );
-
+    console.log(results)
     return results.length > 0 ? results[0] : null;
   }
 
@@ -101,7 +106,17 @@ class Discussion {
   static async findAllQuestions() {
     const [results] = await db
       .promise()
-      .query("SELECT * FROM Discussions WHERE answerTo IS NULL");
+      .query(`SELECT Discussions.*, Users.name AS author_name, 
+              UserProfiles.profile_image_url, 
+              GROUP_CONCAT(DISTINCT Hashtags.name) AS hashtags_name
+              FROM Discussions
+              JOIN Users ON Discussions.userId = Users.id
+              JOIN UserProfiles ON Users.id = UserProfiles.userId
+              LEFT JOIN DiscussionHashtags ON Discussions.discussionId = DiscussionHashtags.discussionId
+              LEFT JOIN Hashtags ON DiscussionHashtags.hashtagId = Hashtags.hashtagId
+              WHERE Discussions.answerTo IS NULL
+              GROUP BY Discussions.discussionId`);
+
     return results;
   }
 
@@ -118,10 +133,15 @@ class Discussion {
     );
 
     const [results] = await db.promise().query(
-      `SELECT Discussions.*, UserDiscussions.* 
+      `SELECT Discussions.*, UserDiscussions.*, Users.name AS author_name, UserProfiles.profile_image_url, group_concat(Distinct Hashtags.name) as hashtags_name 
               FROM Discussions 
-              JOIN UserDiscussions ON Discussions.discussionId = UserDiscussions.discussionId 
-              WHERE Discussions.answerTo IS NULL AND UserDiscussions.userId = ?`,
+              JOIN UserDiscussions ON Discussions.discussionId = UserDiscussions.discussionId
+              JOIN Users ON Discussions.userId = Users.id
+              JOIN UserProfiles ON Users.id = UserProfiles.userId
+              LEFT JOIN DiscussionHashtags ON Discussions.discussionId = DiscussionHashtags.discussionId
+              LEFT JOIN Hashtags ON DiscussionHashtags.hashtagId = Hashtags.hashtagId
+              WHERE Discussions.answerTo IS NULL AND UserDiscussions.userId = ?
+              GROUP BY Discussions.discussionId`,
       [userId]
     );
 
