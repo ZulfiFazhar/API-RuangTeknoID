@@ -108,8 +108,7 @@ class Discussion {
   }
 
   static async findAllQuestions() {
-    const [results] = await db
-      .promise()
+    const [results] = await db.promise()
       .query(`SELECT Discussions.*, Users.name AS author_name, 
               UserProfiles.profile_image_url, 
               GROUP_CONCAT(DISTINCT Hashtags.name) AS hashtags_name,
