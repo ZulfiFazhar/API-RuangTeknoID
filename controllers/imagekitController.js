@@ -17,7 +17,7 @@ class ImagekitController {
 
       const response = await Imagekit.uploadImage(req.file);
 
-      if(response){
+      if (response) {
         return res.status(200).json({
           status: "success",
           message: "Image uploaded successfully",
@@ -42,7 +42,7 @@ class ImagekitController {
 
     const response = await Imagekit.deleteImage(fileId);
 
-    if(response){
+    if (response) {
       return res.status(200).json({
         status: "success",
         message: "Image deleted successfully",
