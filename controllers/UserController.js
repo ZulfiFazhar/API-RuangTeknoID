@@ -14,14 +14,14 @@ class UserController {
     }
 
     try {
-      const existingUser = await User.findByEmail(email);      
+      const existingUser = await User.findByEmail(email);
       if (existingUser) {
         return res
           .status(400)
           .json({ error: "Email is already registered. Please log in." });
       }
 
-      console.log("tes")
+      // console.log("tes");
 
       const hashedPassword = bcrypt.hashSync(password, 10);
       const otp = Math.floor(100000 + Math.random() * 900000);
@@ -149,7 +149,7 @@ class UserController {
         data: { accessToken, refreshToken },
       });
     } catch (err) {
-      console.log(err)
+      console.log(err);
 
       return res.status(500).json({
         status: "error",
@@ -197,7 +197,6 @@ class UserController {
         error: err.message,
       });
     }
-
   }
 
   // Metode Validasi Login
@@ -307,7 +306,7 @@ class UserController {
         profile_image_url: user.profile_image_url,
         location: user.location,
         personal_url: user.personal_url,
-      }
+      };
 
       res.status(200).json({
         status: "success",
@@ -347,7 +346,7 @@ class UserController {
         profile_image_url: user.profile_image_url,
         location: user.location,
         personal_url: user.personal_url,
-      }
+      };
 
       res.status(200).json({
         status: "success",
@@ -411,7 +410,6 @@ class UserController {
         data: true,
       });
     }
-
   }
 
   // Metode Menghapus Pengguna
@@ -531,6 +529,34 @@ class UserController {
         message: "Internal Server Error",
         error: err.message,
       });
+    }
+  }
+
+  static async getTopPosts(req, res) {
+    const { userId } = req.user;
+    try {
+      const topPosts = await User.getTopPosts(userId);
+      res.status(200).json({
+        status: "success",
+        message: "Top posts fetched successfully",
+        data: topPosts,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  static async getEngagementTrends(req, res) {
+    const { userId } = req.user;
+    try {
+      const engagements = await User.getEngagementTrends(userId);
+      res.status(200).json({
+        status: "success",
+        message: "Top posts fetched successfully",
+        data: engagements,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   }
 }
