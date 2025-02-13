@@ -499,7 +499,7 @@ class PostController {
     try {
       const userId = req.user.userId;
       const recommendedArticles = await Post.recommendArticlesByUserLog(userId);
-      console.log(recommendedArticles);
+      // console.log(recommendedArticles);
       if (recommendedArticles.length === 0) {
         return res.status(404).json({ message: "No recommendations found" });
       }

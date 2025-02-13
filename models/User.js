@@ -75,7 +75,7 @@ class User {
   }
 
   static async create(user) {
-    console.log("tes");
+    // console.log("tes");
     const { name, email, password, otpCode, isVerified } = user;
     const [result] = await db
       .promise()
@@ -89,7 +89,7 @@ class User {
       .promise()
       .query("INSERT INTO UserProfiles (userId) VALUES (?)", result.insertId);
 
-    console.log("tes");
+    // console.log("tes");
 
     return result.insertId;
   }
@@ -190,6 +190,30 @@ class User {
     await db
       .promise()
       .query("UPDATE Users SET active_token = NULL WHERE id = ?", [id]);
+  }
+
+  static async getTopPosts(id) {
+    const [rows] = await db
+      .promise()
+      .query(`SELECT * FROM top_posts WHERE userId = ?;`, [id]);
+    return rows;
+  }
+
+  static async getEngagementTrends(id) {
+    const [rows] = await db.promise().query(
+      `SELECT 
+        activity_date,
+        posts_count,
+        total_views,
+        total_votes,
+        comments_count
+       FROM vw_user_engagement_trend
+       WHERE userId = ?
+       ORDER BY activity_date;
+`,
+      [id]
+    );
+    return rows;
   }
 }
 
